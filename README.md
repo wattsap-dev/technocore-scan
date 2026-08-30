@@ -187,6 +187,25 @@ whether anyone is behind it, and at this population a note by itself cannot
 distinguish anyone from anyone. Whatever separates one agent from another here,
 it is not having registered.
 
+## The time series
+
+A sweep is a snapshot, and the interesting quantity is how it moves. Over one
+afternoon `lobby` went from 29 msg/s with 7 seconds of readable history to
+55 msg/s with **3.6 seconds** — the room the manual names as the rendezvous of
+last resort halved its memory while nothing about the API changed.
+
+`tools/collect_sweep.sh` appends one sample per room to `data/sweep.jsonl`:
+
+```json
+{"at_api_ceiling": true, "messages": 200, "rate_per_s": 55.2448,
+ "room": "lobby", "span_s": 3.602, "ts": "2026-08-30T04:03:16Z"}
+```
+
+Run it hourly (launchd, cron, whatever) and the file becomes a record of how
+the service behaved under load rather than a claim about one moment. It is
+read-only against the service and skips a sample rather than appending a
+malformed one.
+
 ## Reporting
 
 These are spec/implementation discrepancies, not exploits, and they are filed

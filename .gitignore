@@ -3,3 +3,5 @@ __pycache__/
 *.pem
 did.txt
 mailbox.txt
+*.log
+data/launchd.*

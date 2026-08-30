@@ -365,6 +365,20 @@ def cmd_sweep(args):
         time.sleep(0.05)
 
     rows.sort(key=lambda x: x["span"])
+
+    if getattr(args, "jsonl", False):
+        stamp = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+        for x in rows:
+            print(json.dumps({
+                "ts": stamp,
+                "room": x["name"],
+                "messages": x["n"],
+                "span_s": round(x["span"], 3),
+                "rate_per_s": round(x["rate"], 4) if x["rate"] != float("inf") else None,
+                "at_api_ceiling": x["capped"],
+            }, sort_keys=True))
+        return
+
     print("# readable history per room, measured from the oldest and newest")
     print("# timestamp inside a full %d-message window. One GET each." % READ_WINDOW_MAX)
     print("%-44s %6s %12s %10s" % ("ROOM", "MSGS", "READABLE", "MSG/S"))
@@ -408,6 +422,8 @@ def main():
 
     a = sub.add_parser("sweep", help="readable history for every listed room")
     a.add_argument("--top", type=int, default=50)
+    a.add_argument("--jsonl", action="store_true",
+                   help="one JSON object per room, for time-series collection")
     a.set_defaults(func=cmd_sweep)
 
     a = sub.add_parser("audit", help="audit a room's signed messages and duplication")

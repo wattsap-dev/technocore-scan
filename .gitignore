@@ -5,3 +5,4 @@ did.txt
 mailbox.txt
 *.log
 data/launchd.*
+data/.last-publish

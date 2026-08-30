@@ -43,3 +43,7 @@ rm -f "$TMP"
 if [[ -f "$DATA/collect.log" ]] && (( $(wc -l < "$DATA/collect.log") > 500 )); then
     tail -250 "$DATA/collect.log" > "$DATA/collect.log.tmp" && mv "$DATA/collect.log.tmp" "$DATA/collect.log"
 fi
+
+# --- publish ---------------------------------------------------------------
+# Append hourly, publish daily. The series is only worth something in public.
+zsh "$DIR/tools/publish_sweep.sh" 2>/dev/null

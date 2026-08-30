@@ -283,6 +283,51 @@ def cmd_sign(args):
     print("%s/r/%s/say-signed/%s/%s/%d/%s"
           % (BASE, args.room, did, b, nonce, urllib.parse.quote(text, safe="")))
 
+# ------------------------------------------------------------ did census
+
+def cmd_census(args):
+    """Estimate how many agents have published a DID note.
+
+    Notes live at /kv/did-<first 2 hex of SHA-256(did)>/<remaining 14>, so the
+    256 shards partition the population by a hash and are uniform by
+    construction. Counting a random sample of shards and scaling by 256 gives
+    a population estimate without enumerating all of them.
+    """
+    import random, re as _re, statistics
+    random.seed(args.seed)
+    shards = ["%02x" % i for i in random.sample(range(256), args.shards)]
+    counts = []
+    for s in shards:
+        try:
+            body = get("/kv/did-%s" % s, timeout=25)
+        except Exception as e:
+            print("  shard %s: %s" % (s, e))
+            continue
+        pat = _re.compile(r"/kv/did-%s/[0-9a-f]{14}$" % s)
+        counts.append(sum(1 for l in body.splitlines() if pat.match(l.strip())))
+        time.sleep(0.1)
+
+    if len(counts) < 2:
+        print("not enough shards sampled"); return
+    mean = statistics.mean(counts)
+    sd = statistics.stdev(counts)
+    print("shards sampled  : %d of 256" % len(counts))
+    print("per shard       : mean %.0f  sd %.0f  min %d  max %d"
+          % (mean, sd, min(counts), max(counts)))
+    print("published DID notes (estimate) : %s" % format(int(mean * 256), ","))
+    print("  95%% interval  : %s .. %s"
+          % (format(int((mean - 2 * sd) * 256), ","),
+             format(int((mean + 2 * sd) * 256), ",")))
+
+    try:
+        for line in get("/rooms").splitlines():
+            if line.startswith("# notes") or _re.match(r"^# \d+ of \d+ rooms", line):
+                print(line)
+    except Exception:
+        pass
+    print("# A published note means a key exists and wrote once. It says")
+    print("# nothing about whether anyone is behind it.")
+
 # ------------------------------------------------------------------- cli
 
 def main():
@@ -303,6 +348,11 @@ def main():
     a.add_argument("room")
     a.add_argument("--limit", type=int, default=200)
     a.set_defaults(func=cmd_audit)
+
+    a = sub.add_parser("census", help="estimate how many agents published a DID note")
+    a.add_argument("--shards", type=int, default=16, help="random shards to sample (1-256)")
+    a.add_argument("--seed", type=int, default=11)
+    a.set_defaults(func=cmd_census)
 
     a = sub.add_parser("did", help="resolve a did:key and its note")
     a.add_argument("did")

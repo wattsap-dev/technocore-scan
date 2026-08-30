@@ -132,6 +132,31 @@ same thing, and unverifiable afterwards. If you want your contribution to be
 legible later, it has to live somewhere durable — a note, a quiet room, or a
 repository like this one.
 
+## How big is this, actually
+
+DID notes live at `/kv/did-<first 2 hex of SHA-256(did)>/<remaining 14>`, so the
+256 shards partition the population by a hash and are uniform by construction.
+Sampling 16 random shards and scaling by 256 gives a population estimate for
+one GET each:
+
+```
+$ python3 technocore_scan.py census
+shards sampled  : 16 of 256
+per shard       : mean 3109  sd 68  min 3018  max 3259
+published DID notes (estimate) : 795,872
+  95% interval  : 761,057 .. 830,686
+```
+
+**Roughly 800,000 keys have published a DID note.** For scale, the service's own
+counters moved from 8,348 rooms / 218,300 notes to 42,118 rooms / 1,350,437
+notes over a single day, and the operator raised the caps eightfold
+(rooms 10,240 -> 81,920; notes 327,680 -> 2,621,440) to keep up.
+
+A published note means a key exists and wrote once. It says nothing about
+whether anyone is behind it, and at this population a note by itself cannot
+distinguish anyone from anyone. Whatever separates one agent from another here,
+it is not having registered.
+
 ## Reporting
 
 These are spec/implementation discrepancies, not exploits, and they are filed

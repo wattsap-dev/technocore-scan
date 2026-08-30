@@ -328,6 +328,68 @@ def cmd_census(args):
     print("# A published note means a key exists and wrote once. It says")
     print("# nothing about whether anyone is behind it.")
 
+# ---------------------------------------------------------------- sweep
+
+def _parse_ts(s):
+    from datetime import datetime
+    return datetime.strptime(s[:26].ljust(26, "0"), "%Y-%m-%dT%H:%M:%S.%f")
+
+def cmd_sweep(args):
+    """Measure readable history for every room /rooms lists.
+
+    One GET per room. The newest and oldest timestamps inside a full
+    `?limit=200` window bound the readable history exactly — no sampling and
+    no second probe, because the window itself is the thing being measured.
+    A room whose window spans a few seconds cannot be cited or replied to.
+    """
+    rooms, _ = parse_rooms(get("/rooms"))
+    rows = []
+    for r in rooms[: args.top]:
+        try:
+            d = get_json("/r/%s?limit=%d&format=json" % (r["name"], READ_WINDOW_MAX),
+                         timeout=25)
+        except Exception:
+            time.sleep(1.0)
+            continue
+        ms = d.get("messages", [])
+        if len(ms) < 2:
+            continue
+        span = (_parse_ts(ms[-1]["ts"]) - _parse_ts(ms[0]["ts"])).total_seconds()
+        rows.append({
+            "name": r["name"],
+            "n": len(ms),
+            "span": span,
+            "rate": (len(ms) - 1) / span if span > 0 else float("inf"),
+            "capped": len(ms) >= READ_WINDOW_MAX,
+        })
+        time.sleep(0.05)
+
+    rows.sort(key=lambda x: x["span"])
+    print("# readable history per room, measured from the oldest and newest")
+    print("# timestamp inside a full %d-message window. One GET each." % READ_WINDOW_MAX)
+    print("%-44s %6s %12s %10s" % ("ROOM", "MSGS", "READABLE", "MSG/S"))
+    for x in rows:
+        span = x["span"]
+        human = ("%.0fs" % span if span < 90 else
+                 "%.0fm" % (span / 60) if span < 5400 else
+                 "%.1fh" % (span / 3600))
+        print("%-44s %6d %12s %10.2f%s"
+              % (x["name"][:44], x["n"], human, x["rate"],
+                 "  *" if x["capped"] else ""))
+
+    capped = [x for x in rows if x["capped"]]
+    short = [x for x in capped if x["span"] < 300]
+    print("\n%d rooms measured, %d filled the 200-message window (*)."
+          % (len(rows), len(capped)))
+    if capped:
+        print("Of those, %d (%.0f%%) hold under 5 minutes of readable history."
+              % (len(short), 100.0 * len(short) / len(capped)))
+    if short:
+        med = sorted(x["span"] for x in short)[len(short) // 2]
+        print("Median readable history among them: %.0f seconds." % med)
+    print("# A room below a few minutes is write-only in practice: by the time")
+    print("# anyone fetches a cited seq, it is gone.")
+
 # ------------------------------------------------------------------- cli
 
 def main():
@@ -343,6 +405,10 @@ def main():
     a.add_argument("room")
     a.add_argument("--window", type=float, default=10.0)
     a.set_defaults(func=cmd_churn)
+
+    a = sub.add_parser("sweep", help="readable history for every listed room")
+    a.add_argument("--top", type=int, default=50)
+    a.set_defaults(func=cmd_sweep)
 
     a = sub.add_parser("audit", help="audit a room's signed messages and duplication")
     a.add_argument("room")

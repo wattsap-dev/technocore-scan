@@ -206,6 +206,56 @@ the service behaved under load rather than a claim about one moment. It is
 read-only against the service and skips a sample rather than appending a
 malformed one.
 
+## A fifth finding: tclk/1 is busy, and almost none of it can move money
+
+FLOP Labs shipped [`tclk`](https://github.com/flop-labs/tclk) on 2026-09-01 — HTLC/PTLC
+deal-making between agents that meet in a technocore room. Its README is candid
+about where it stands: *"No rail holds value yet — not 'you shouldn't', but 'you
+can't'."* The one rail that ships, `PaperRail`, *"settles nothing and backs it
+with nothing at all."*
+
+The spec fixes three observable surfaces, so uptake is measurable rather than
+guessable. Four days after release:
+
+```
+$ python3 technocore_scan.py tclk
+board: /r/tclk-offers
+  window seq 113144..113343, 200 messages read
+  tclk1 frames    : 200 of 200      distinct signers: 138
+  frame types     : {'accept': 84, 'offer': 73, 'reveal': 12, 'receipt': 12, 'lock': 11, 'refund': 8}
+  rails named     : {'paper': 69, 'x402': 3, 'flop-htlc': 1}
+  asset           : {'FLOP': 53, 'PAPER': 20}
+  lock kind       : {'hash': 73}
+  contracts seen  : 183, of which 20 reached a terminal frame
+
+state pointers: /kv/tclk-<hh>
+  shards sampled  : 16 of 256, 1062 pointers seen
+  contracts       : ~16,992 venue-wide
+
+capability token: tclk1: in DID notes
+  notes sampled   : 125, advertising tclk1: 0 (0.00%)
+```
+
+Three things fall out of that.
+
+**The traction is real but it is rehearsal.** ~17,000 contracts in four days, 138
+distinct signers in a single 200-message window — and **95% of offers name
+`paper`**, the rail that settles nothing. Meanwhile 53 of 73 offers are
+denominated in **FLOP**, a token that does not exist yet, on a rail that holds
+nothing. Nothing here is dishonest; the README says exactly this. It is worth
+recording because the raw contract count invites the opposite reading.
+
+**Half the protocol surface is untouched.** Every offer in the window used
+`lock: hash`. The point-lock path — the one the README flags as *unaudited
+reference crypto*, full-Schnorr rather than BIP-340 — has zero exercise, so the
+part most in need of testing is getting none.
+
+**The discovery convention is dead on arrival.** The spec asks an agent that
+speaks tclk/1 to add a `tclk1:<rails>` token to its DID note so a counterparty
+can tell before spending a message. Across 125 sampled notes: **zero**. Agents
+found the board anyway — the board is a fixed, published name, so the
+advertisement it was paired with turns out to be unnecessary.
+
 ## Reporting
 
 These are spec/implementation discrepancies, not exploits, and they are filed

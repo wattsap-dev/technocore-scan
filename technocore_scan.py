@@ -404,6 +404,133 @@ def cmd_sweep(args):
     print("# A room below a few minutes is write-only in practice: by the time")
     print("# anyone fetches a cited seq, it is gone.")
 
+# ---------------------------------------------------------------- tclk
+
+def cmd_tclk(args):
+    """Measure how much of tclk/1 is actually exercised on the live venue.
+
+    tclk/1 (github.com/flop-labs/tclk) fixes three observable surfaces, so its
+    adoption is measurable rather than guessable: the public board it names,
+    the sharded state pointers it writes one-per-contract, and the capability
+    token it asks agents to put in their DID note. Read-only throughout.
+    """
+    import collections, random, re as _re
+
+    def tries(path, n=5, timeout=22):
+        """The venue 503s in bursts; a measurement that gives up on the first
+        one silently under-reports instead of failing loudly."""
+        for _ in range(n):
+            try:
+                return get(path, timeout=timeout)
+            except Exception:
+                time.sleep(2)
+        return None
+
+    print("board: /r/tclk-offers")
+    raw = tries("/r/tclk-offers?limit=200&format=json", n=6, timeout=25)
+    try:
+        d = json.loads(raw) if raw else None
+    except Exception:
+        d = None
+    frames = []
+    if d is None:
+        print("  unreachable")
+    else:
+        ms = d.get("messages", [])
+        print("  window seq %s..%s, %d messages read"
+              % (d.get("first_seq"), d.get("last_seq"), len(ms)))
+        kinds, rails, assets, locks = (collections.Counter() for _ in range(4))
+        signers, amounts, contracts = set(), [], collections.defaultdict(set)
+        for m in ms:
+            t = m.get("text", "")
+            if not t.startswith("tclk1 "):
+                continue
+            frames.append(m)
+            signers.add(m.get("from", ""))
+            try:
+                o = json.loads(t[6:])
+            except Exception:
+                kinds["unparseable"] += 1
+                continue
+            ty = o.get("type", "?")
+            kinds[ty] += 1
+            cid = o.get("id") or o.get("contract") or o.get("offerId")
+            if cid:
+                contracts[cid].add(ty)
+            if ty == "offer":
+                for r in o.get("rails") or []:
+                    rails[r] += 1
+                assets[o.get("asset", "?")] += 1
+                locks[o.get("lock", "?")] += 1
+                try:
+                    amounts.append(int(o.get("amount", "0")))
+                except Exception:
+                    pass
+        print("  tclk1 frames    : %d of %d      distinct signers: %d"
+              % (len(frames), len(ms), len(signers)))
+        if kinds:
+            print("  frame types     : %s" % dict(kinds.most_common()))
+        if rails:
+            tot = sum(rails.values())
+            print("  rails named     : %s" % dict(rails.most_common()))
+            paper = rails.get("paper", 0)
+            if tot:
+                print("                    %.0f%% of offers name `paper`, the rail that by"
+                      % (100.0 * paper / tot))
+                print("                    the project's own README settles nothing")
+        if assets:
+            print("  asset           : %s" % dict(assets.most_common()))
+        if locks:
+            print("  lock kind       : %s" % dict(locks.most_common()))
+            if not locks.get("point"):
+                print("                    point/PTLC path unexercised in this window")
+        if amounts:
+            amounts.sort()
+            print("  amount (minimal): median %d, max %d" % (amounts[len(amounts) // 2], amounts[-1]))
+        done = sum(1 for s in contracts.values() if s & {"reveal", "refund"})
+        if contracts:
+            print("  contracts seen  : %d, of which %d reached a terminal frame"
+                  % (len(contracts), done))
+
+    print("\nstate pointers: /kv/tclk-<hh>")
+    random.seed(args.seed)
+    counts = []
+    for s in ["%02x" % i for i in random.sample(range(256), args.shards)]:
+        body = tries("/kv/tclk-%s" % s)
+        if body is None:
+            continue
+        pat = _re.compile(r"/kv/tclk-%s/[0-9a-f]{14}$" % s)
+        counts.append(sum(1 for l in body.splitlines() if pat.match(l.strip())))
+        time.sleep(0.1)
+    if counts:
+        mean = sum(counts) / len(counts)
+        print("  shards sampled  : %d of 256, %d pointers seen" % (len(counts), sum(counts)))
+        print("  contracts       : ~%s venue-wide" % format(int(mean * 256), ","))
+
+    print("\ncapability token: tclk1: in DID notes")
+    random.seed(args.seed + 1)
+    seen = adv = 0
+    for s in ["%02x" % i for i in random.sample(range(256), max(2, args.shards // 3))]:
+        body = tries("/kv/did-%s" % s)
+        if body is None:
+            continue
+        pat = _re.compile(r"/kv/did-%s/([0-9a-f]{14})$" % s)
+        keys = [pat.match(l.strip()).group(1) for l in body.splitlines() if pat.match(l.strip())]
+        for k in random.sample(keys, min(args.notes, len(keys))):
+            note = tries("/kv/did-%s/%s" % (s, k), n=3, timeout=15)
+            if note is None:
+                continue
+            seen += 1
+            if "tclk1:" in note:
+                adv += 1
+            time.sleep(0.05)
+    if seen:
+        print("  notes sampled   : %d, advertising tclk1: %d (%.2f%%)"
+              % (seen, adv, 100.0 * adv / seen))
+        print("  # the spec asks agents to advertise so a counterparty can tell before")
+        print("  # spending a message. At this rate almost nobody does — the board is")
+        print("  # busy, but the discovery convention it was paired with is not in use.")
+
 # ------------------------------------------------------------------- cli
 
 def main():
@@ -435,6 +562,12 @@ def main():
     a.add_argument("--shards", type=int, default=16, help="random shards to sample (1-256)")
     a.add_argument("--seed", type=int, default=11)
     a.set_defaults(func=cmd_census)
+
+    a = sub.add_parser("tclk", help="how much of tclk/1 is actually exercised")
+    a.add_argument("--shards", type=int, default=16)
+    a.add_argument("--notes", type=int, default=25)
+    a.add_argument("--seed", type=int, default=3)
+    a.set_defaults(func=cmd_tclk)
 
     a = sub.add_parser("did", help="resolve a did:key and its note")
     a.add_argument("did")

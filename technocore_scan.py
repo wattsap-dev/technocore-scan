@@ -555,6 +555,100 @@ def tclk_validate(obj):
     return True, None
 
 
+
+# ------------------------------------------------------- verify signatures
+
+_A58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
+# Ed25519 SubjectPublicKeyInfo prefix; openssl wants SPKI, not the raw key.
+_SPKI = bytes.fromhex("302a300506032b6570032100")
+
+
+def _b58decode(s):
+    n = 0
+    for ch in s:
+        n = n * 58 + _A58.index(ch)
+    body = n.to_bytes((n.bit_length() + 7) // 8, "big")
+    return b"\x00" * (len(s) - len(s.lstrip("1"))) + body
+
+
+def pubkey_from_did(did):
+    """Raw Ed25519 public key out of a did:key, or None if it is not one."""
+    if not did.startswith("did:key:z"):
+        return None
+    try:
+        raw = _b58decode(did[len("did:key:z"):])
+    except ValueError:
+        return None
+    if len(raw) != 34 or raw[:2] != b"\xed\x01":
+        return None
+    return raw[2:]
+
+
+def verify_record(room, m):
+    """(True|False|None) for a stored message. None = nothing to check against."""
+    import subprocess, tempfile
+    sig_b64, did = m.get("sig"), m.get("from", "")
+    pk = pubkey_from_did(did)
+    if not sig_b64 or pk is None:
+        return None
+    try:
+        sig = base64.urlsafe_b64decode(sig_b64 + "=" * (-len(sig_b64) % 4))
+    except Exception:
+        return None
+    payload = "%s|%s|%s" % (room, m.get("nonce"), m.get("text"))
+    d = tempfile.mkdtemp()
+    try:
+        kp = os.path.join(d, "k.der"); mp = os.path.join(d, "m"); sp = os.path.join(d, "s")
+        open(kp, "wb").write(_SPKI + pk)
+        open(mp, "wb").write(payload.encode())
+        open(sp, "wb").write(sig)
+        r = subprocess.run(["openssl", "pkeyutl", "-verify", "-pubin", "-inkey", kp,
+                            "-keyform", "DER", "-rawin", "-in", mp, "-sigfile", sp],
+                           capture_output=True)
+        return r.returncode == 0
+    finally:
+        for f in os.listdir(d):
+            os.unlink(os.path.join(d, f))
+        os.rmdir(d)
+
+
+def cmd_verify(args):
+    """Re-check stored signatures from the read path, using nothing else.
+
+    This exists because the repo's first finding said it was impossible. That
+    finding came from openapi.json, which documents response items without
+    `sig`; the service returns `sig` on every message. Nothing here needs an
+    account or a key -- the DID carries the public key and the record carries
+    the signature.
+    """
+    room = args.room
+    d = get_json("/r/%s?limit=%d&format=json" % (room, min(args.limit, READ_WINDOW_MAX)),
+                 timeout=40)
+    ms = d.get("messages", [])
+    ok = bad = skip = 0
+    failures = []
+    for m in ms:
+        v = verify_record(room, m)
+        if v is None:
+            skip += 1
+        elif v:
+            ok += 1
+        else:
+            bad += 1
+            if len(failures) < 3:
+                failures.append(m)
+    print("room            : /r/%s" % room)
+    print("messages        : %d" % len(ms))
+    print("signature valid : %d" % ok)
+    print("signature FAILED: %d" % bad)
+    print("unverifiable    : %d  (no sig, or a DID that is not an ed25519 did:key)" % skip)
+    for m in failures:
+        print("   failed seq %s from %s..." % (m.get("seq"), m.get("from", "")[:34]))
+    if ok and not bad:
+        print("# Every record checked verifies against the DID stored beside it.")
+        print("# Payload is <room>|<nonce>|<text>; the key is inside the did:key.")
+
+
 # ---------------------------------------------------------------- tclk
 
 def cmd_tclk(args):
@@ -769,6 +863,11 @@ def main():
     a.add_argument("--jsonl", action="store_true",
                    help="one JSON object per room, for time-series collection")
     a.set_defaults(func=cmd_sweep)
+
+    a = sub.add_parser("verify", help="re-check stored signatures from the read path")
+    a.add_argument("room")
+    a.add_argument("--limit", type=int, default=200)
+    a.set_defaults(func=cmd_verify)
 
     a = sub.add_parser("audit", help="audit a room's signed messages and duplication")
     a.add_argument("room")

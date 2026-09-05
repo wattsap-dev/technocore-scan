@@ -1,4 +1,4 @@
-<title>Technocore's Four Seconds</title>
+<title>Technocore's Missing 97x</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
@@ -251,14 +251,18 @@ footer p { font-size: .8125rem; color: var(--muted); max-width: 66ch; }
 footer a { color: var(--cyan); }
 
 :focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; border-radius: 2px; }
+  .correction{border-left:3px solid #E8913A;padding:.65rem 0 .65rem .9rem;
+    background:linear-gradient(90deg,rgba(232,145,58,.07),transparent);
+    border-radius:0 4px 4px 0}
+  .correction strong:first-child{color:#E8913A}
 </style>
 
 <div class="wrap">
 
   <header class="hero">
-    <div class="kicker">technocore.chat · measured 2026-08-30</div>
-    <h1>800,000 agents.<br><em>Four seconds</em> of memory.</h1>
-    <p class="dek">Technocore's rendezvous room forgets what was said in it before most agents finish a polling cycle. Not by policy — by arithmetic that nothing in the manual states.</p>
+    <div class="kicker">technocore.chat · measured 2026-08-30 · <span style="color:#E8913A">corrected 2026-09-05</span></div>
+    <h1>800,000 agents.<br>A room that remembers <em>14 minutes</em> —<br>and a client that sees <em>five seconds</em> of it.</h1>
+    <p class="dek">This page used to say the rendezvous room forgets in four seconds. That was wrong, and the correction is the more interesting number: the messages are still there. The documented way to page through a room just cannot reach them.</p>
     <div class="byline">
       Measured with <a href="https://github.com/wattsap-dev/technocore-scan">technocore-scan</a> — Python stdlib and <span class="mono">openssl</span>, no SDK, no key, no account. Every number below reproduces with one command.
     </div>
@@ -268,31 +272,32 @@ footer a { color: var(--cyan); }
     <div class="stat"><span class="n">804,142</span><span class="k">published DID notes<br>(est., 95% 760k–849k)</span></div>
     <div class="stat"><span class="n">45,421</span><span class="k">rooms</span></div>
     <div class="stat"><span class="n">1,365,550</span><span class="k">notes stored</span></div>
-    <div class="stat"><span class="n hot">4.8 s</span><span class="k">readable history<br>in <span class="mono">lobby</span></span></div>
+    <div class="stat"><span class="n hot">97&times;</span><span class="k">more history in the ring<br>than one read page shows</span></div>
   </div>
 
   <section>
     <div class="eyebrow">The mechanism</div>
-    <h2>A room's memory is its write rate, divided into 200</h2>
-    <p>The read API returns at most <code>?limit=200</code> messages, and <code>limit</code> truncates from the <em>newest</em> end — so <code>since=N&amp;limit=k</code> returns the k newest messages after N, not the k that follow your cursor. Every room measured hit that ceiling rather than its storage ring.</p>
-    <p>Which makes readable history a single division: <strong>200 ÷ messages per second</strong>. A quiet room holds a day. The room the manual names as the meeting place of last resort holds less than five seconds.</p>
+    <h2>Two numbers, and I reported the wrong one as the room's memory</h2>
+    <p>The read API returns at most <code>?limit=200</code> messages, and <code>limit</code> truncates from the <em>newest</em> end — so <code>since=N&amp;limit=k</code> returns the k newest messages after N, not the k that follow your cursor. Every room measured hit that ceiling. So far so good: <strong>what one page covers is 200 &divide; messages per second</strong>, and in <span class="mono">lobby</span> that is about five seconds.</p>
+    <p class="correction"><strong>What I got wrong:</strong> I called that the room's memory. It is the page size. <code>/r/&lt;room&gt;/export</code> returns the whole storage ring — 550 to 29,753 messages depending on the room — and across 22 rooms measured both ways the ring holds a <strong>median 97&times;</strong> more history than a page. <span class="mono">lobby</span> reads as 5 seconds through a page and holds <strong>13.9 minutes</strong> in its ring. The claim that "only the operator's server-side log retains it" was false: <code>/export</code> is a public GET.</p>
+    <p>What survives is the gap itself. A client that pages the documented way sees the lower curve. Everything between the two curves exists, is public, and is invisible to that client — and <code>first_seq</code> is the only hint that it was skipped.</p>
 
     <div class="chart">
       <svg id="plot" viewBox="0 0 720 400" role="img"
-           aria-label="Scatter plot: room write rate against readable history, both on log scales. Rooms fall along the curve readable = 200 divided by rate. lobby sits at the extreme with 41 messages per second and 4.8 seconds of history.">
+           aria-label="Scatter plot on log scales: room write rate against history, showing two bands. The lower band is what one 200-message read page covers, following the curve 200 divided by rate. The upper band, about 97 times higher, is what each room's storage ring actually holds. Every room appears twice, once in each band, with a line joining its two positions.">
       </svg>
       <div class="legend">
-        <span><i class="dot" style="background:var(--cyan)"></i> at the 200-message ceiling</span>
-        <span><i class="dot" style="background:var(--muted)"></i> below it (room is younger than 200 messages)</span>
-        <span><i class="dot" style="background:var(--amber);border-radius:1px"></i> readable = 200 ÷ rate</span>
+        <span><i class="dot" style="background:var(--cyan)"></i> what one read page covers</span>
+        <span><i class="dot" style="background:#7BE0A8"></i> what the ring actually holds</span>
+        <span><i class="dot" style="background:var(--amber);border-radius:1px"></i> page = 200 &divide; rate</span>
       </div>
     </div>
   </section>
 
   <section>
     <div class="eyebrow">Movement</div>
-    <h2>It halved in an afternoon</h2>
-    <p>The ceiling is fixed, so the only variable is traffic — and traffic is climbing. Three samples of <code>lobby</code> from one day, no API change in between:</p>
+    <h2>The page halved in an afternoon</h2>
+    <p>The 200-message ceiling is fixed, so the only variable is traffic — and traffic is climbing. Three samples of <code>lobby</code> from one day, no API change in between. These are page spans, not the room forgetting: as the room speeds up, a paging client sees a thinner and thinner slice of the same ring.</p>
 
     <div class="degrade">
       <div class="deg-rows">
@@ -310,8 +315,8 @@ footer a { color: var(--cyan); }
 
     <div class="finds">
       <div class="find warn">
-        <div><div class="big">52%</div><div class="sub">OF CITATIONS</div></div>
-        <p>A service in <code>technocore-starter</code> verifies contributions by citing them as <code>room=&lt;room&gt; seq=&lt;seq&gt;</code>. In one 200-message window, <strong>29 of 56 submissions</strong> failed with <em>"artifact sequence was not found in the requested room."</em> The work was fine. The citation expired before review. The submitting agents have no way to tell those apart.</p>
+        <div><div class="big">62%</div><div class="sub">OF CITATIONS</div></div>
+        <p>A service in <code>technocore-starter</code> verifies contributions by citing them as <code>room=&lt;room&gt; seq=&lt;seq&gt;</code>. Over the room's whole ring, <strong>135 of 217 submissions</strong> failed with <em>"artifact sequence was not found in the requested room."</em> Resolving each rejection back to its cited seq: <strong>56% had genuinely aged out, 44% were still sitting in the room's ring</strong> and would have been found by a deeper lookup. The submitting agents cannot tell which case they are in. <span style="opacity:.7">(Earlier here as 52%, from one page and without collapsing re-sent rejections.)</span></p>
       </div>
 
       <div class="find warn">
@@ -354,7 +359,7 @@ const svg = document.getElementById("plot");
 
 // log scales
 const xMin = 0.001, xMax = 100;      // msg/s
-const yMin = 1,     yMax = 200000;   // seconds
+const yMin = 1,     yMax = 1200000;  // seconds (the deepest ring holds 10.2 days)
 const lx = v => L + (Math.log10(Math.max(v, xMin)) - Math.log10(xMin)) / (Math.log10(xMax) - Math.log10(xMin)) * (W - L - R);
 const ly = v => T + (1 - (Math.log10(Math.max(v, yMin)) - Math.log10(yMin)) / (Math.log10(yMax) - Math.log10(yMin))) * (H - T - B);
 
@@ -367,7 +372,7 @@ const el = (n, a, txt) => {
 };
 
 // grid + axes
-const yTicks = [[1,"1 s"],[60,"1 min"],[3600,"1 h"],[86400,"1 day"]];
+const yTicks = [[1,"1 s"],[60,"1 min"],[3600,"1 h"],[86400,"1 day"],[864000,"10 days"]];
 for (const [v, lab] of yTicks) {
   el("line", {x1:L, y1:ly(v), x2:W-R, y2:ly(v), stroke:"#1E2A33", "stroke-width":1});
   el("text", {x:L-9, y:ly(v)+4, "text-anchor":"end", fill:"#6B808D",
@@ -385,7 +390,20 @@ el("text", {x:(L+W-R)/2, y:H-8, "text-anchor":"middle", fill:"#A9BDC9",
 el("text", {x:14, y:(T+H-B)/2, "text-anchor":"middle", fill:"#A9BDC9",
             "font-family":"IBM Plex Mono, monospace", "font-size":10.5,
             "letter-spacing":"0.08em", transform:`rotate(-90 14 ${(T+H-B)/2})`},
-   "READABLE HISTORY");
+   "HISTORY COVERED");
+
+// Measured 2026-09-05: each room read twice, once through a 200-message page
+// and once through /export. The pair is the point of the chart, so they are
+// drawn joined rather than as two unrelated clouds.
+const RING = [{"name": "meta", "page": 136.5, "ring": 11532.9, "ringN": 18390, "rate": 1.4582}, {"name": "mb-pair-0065-7507", "page": 1776.6, "ring": 228960.1, "ringN": 15282, "rate": 0.112}, {"name": "kibble", "page": 146.3, "ring": 6893.5, "ringN": 14456, "rate": 1.3601}, {"name": "wildlantern", "page": 2593.1, "ring": 397731.3, "ringN": 29753, "rate": 0.0767}, {"name": "swiftcomet", "page": 2523.3, "ring": 244893.0, "ringN": 28534, "rate": 0.0789}, {"name": "flop-network", "page": 4532.3, "ring": 147545.3, "ringN": 26357, "rate": 0.0439}, {"name": "mb-pair-0095-0170", "page": 1496.4, "ring": 229028.7, "ringN": 15395, "rate": 0.133}, {"name": "turkce-koprusu", "page": 516.9, "ring": 35457.0, "ringN": 16825, "rate": 0.385}, {"name": "technocore-genesis", "page": 30097.4, "ring": 205269.4, "ringN": 27349, "rate": 0.0066}, {"name": "gpu_mempool", "page": 667.3, "ring": 134585.0, "ringN": 27817, "rate": 0.2982}, {"name": "ca-cxxphyiwazuwwxd9agjca3l6gjjj4wmxogyyjczkpump", "page": 2618.1, "ring": 24293.5, "ringN": 23300, "rate": 0.076}, {"name": "e2e_mailbox_v2", "page": 223.4, "ring": 63239.4, "ringN": 20879, "rate": 0.8907}, {"name": "mb-8870cfa8d166", "page": 95830.6, "ring": 226975.7, "ringN": 649, "rate": 0.0021}, {"name": "mb-pair-0027-6247", "page": 1801.1, "ring": 229036.1, "ringN": 24205, "rate": 0.1105}, {"name": "mb-pair-0019-0792", "page": 1614.1, "ring": 229049.5, "ringN": 15416, "rate": 0.1233}, {"name": "d-flop-basecamp", "page": 124199.5, "ring": 884014.2, "ringN": 1235, "rate": 0.0016}, {"name": "mb-2e590eb654ba", "page": 105511.5, "ring": 226150.2, "ringN": 550, "rate": 0.0019}, {"name": "monflop-node", "page": 167.6, "ring": 8438.4, "ringN": 20244, "rate": 1.187}, {"name": "mb-pair-0085-3848", "page": 2231.1, "ring": 229009.3, "ringN": 15193, "rate": 0.0892}, {"name": "ashflop", "page": 308.6, "ring": 22108.3, "ringN": 19352, "rate": 0.6448}, {"name": "technocore", "page": 27.5, "ring": 5160.0, "ringN": 18536, "rate": 7.2293}, {"name": "mb-pair-0014-4444", "page": 1548.6, "ring": 229046.5, "ringN": 15348, "rate": 0.1285}];
+for (const r of RING) {
+  if (!r.rate || r.page <= 0 || r.ring <= 0) continue;
+  const x = lx(r.rate);
+  const y1 = ly(r.page), y2 = ly(r.ring);
+  if (!isFinite(x) || !isFinite(y1) || !isFinite(y2)) continue;
+  el("line", {x1:x, y1:y1, x2:x, y2:y2, stroke:"#2E4A44", "stroke-width":1});
+  el("circle", {cx:x, cy:y2, r:3.2, fill:"#7BE0A8", opacity:.9});
+}
 
 // the ceiling curve: readable = 200 / rate
 let d = "", pen = "M";

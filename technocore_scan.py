@@ -141,12 +141,14 @@ def room_head(room, limit=READ_WINDOW_MAX):
 def cmd_churn(args):
     """Measure how long a message stays readable in a room.
 
-    Two independent ceilings apply. The ring drops old messages past its byte
-    budget, and the read API never returns more than `limit`=200 messages in
-    one reply — and `limit` truncates from the NEWEST end, so `since=N&limit=k`
-    returns the k newest messages after N, not the k that follow your cursor.
-    The readable window is therefore min(ring, 200) messages, and in a busy
-    room that is a matter of seconds.
+    An earlier version of this measured the read window and called it the
+    room's memory. That was wrong. `?limit` does cap a read at 200 and does
+    truncate from the NEWEST end, so `since=N&limit=k` returns the k newest
+    messages after N rather than the k following your cursor -- but
+    /r/<room>/export returns the whole ring, and rings here run 550-29,753
+    messages. Measured through the window, rooms looked like they held seconds
+    of history; against the ring the same rooms hold hours to days, a median of
+    97x more. The window was never the retention bound, only the page size.
     """
     room = args.room
     d0 = room_head(room); t0 = time.time()
@@ -161,19 +163,78 @@ def cmd_churn(args):
     print("room             : %s" % room)
     print("last seq         : %d" % s1)
     print("write rate       : %.2f msg/s  (%.0f/min)" % (rate, rate * 60))
-    print("readable window  : %d messages%s"
+    print("read page        : %d messages%s"
           % (depth, "  (at the API ceiling of %d)" % READ_WINDOW_MAX if capped else ""))
-    if rate > 0:
-        secs = depth / rate
-        print("readable history : %.0f seconds" % secs)
-        if secs < 300:
-            print("=> EFFECTIVELY WRITE-ONLY: a message posted here leaves the")
-            print("   readable window in about %.0f seconds. No client can cite it," % secs)
-            print("   quote it, or reply to it after that. Only the operator's")
-            print("   server-side log retains it.")
+
+    ring, span = ring_extent(room)
+    if ring is None:
+        print("ring             : /export unavailable, cannot measure retention")
+        print("# Without the ring the read page says nothing about how long a")
+        print("# message stays citable -- it is a page size, not a lifetime.")
+        return
+    print("ring             : %d messages" % ring)
+    if span is not None:
+        print("readable history : %s" % fmt_span(span))
+        if rate > 0:
+            print("                   (read page alone would have said %s -- %.0fx short)"
+                  % (fmt_span(depth / rate), span / max(1e-9, depth / rate)))
+    if span is not None and span < 300:
+        print("=> genuinely short-lived: even the full ring holds under five")
+        print("   minutes here, so a citation to this room expires fast.")
     else:
-        print("readable history : room is idle")
+        print("=> a message here stays publicly readable via /export for %s."
+              % (fmt_span(span) if span is not None else "the ring's depth"))
+        print("   Paging with ?limit alone will not find it; /export will.")
     print("# Live measurement of this instance, not a published limit.")
+
+
+def fmt_span(secs):
+    if secs < 120:
+        return "%.0f seconds" % secs
+    if secs < 7200:
+        return "%.1f minutes" % (secs / 60)
+    if secs < 172800:
+        return "%.1f hours" % (secs / 3600)
+    return "%.1f days" % (secs / 86400)
+
+
+def ring_extent(room, timeout=300):
+    """(messages, seconds) held by the room's ring, via /export.
+
+    Returns (None, None) if export is unavailable. A truncated final line is
+    skipped rather than treated as failure -- losing one message off the tail
+    does not change a retention measurement, but discarding the whole room
+    would put us back to measuring the page size.
+    """
+    import datetime as _dt
+    try:
+        raw = get("/r/%s/export" % room, timeout=timeout)
+    except Exception:
+        return None, None
+    first = last = None
+    n = 0
+    for line in raw.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            m = json.loads(line)
+        except Exception:
+            continue
+        n += 1
+        if first is None:
+            first = m.get("ts")
+        last = m.get("ts")
+    if not n:
+        return None, None
+    if not (first and last):
+        return n, None
+    try:
+        f = lambda x: _dt.datetime.fromisoformat(x.replace("Z", "+00:00"))
+        return n, (f(last) - f(first)).total_seconds()
+    except Exception:
+        return n, None
+
 
 # ------------------------------------------------------------- audit a room
 
@@ -335,12 +396,18 @@ def _parse_ts(s):
     return datetime.strptime(s[:26].ljust(26, "0"), "%Y-%m-%dT%H:%M:%S.%f")
 
 def cmd_sweep(args):
-    """Measure readable history for every room /rooms lists.
+    """Measure how much history one read page covers, for every room.
 
-    One GET per room. The newest and oldest timestamps inside a full
-    `?limit=200` window bound the readable history exactly — no sampling and
-    no second probe, because the window itself is the thing being measured.
-    A room whose window spans a few seconds cannot be cited or replied to.
+    One GET per room. IMPORTANT: this measures the READ PAGE, not the room's
+    memory. An earlier version claimed the `?limit=200` window bound readable
+    history exactly. It does not — /r/<room>/export returns the whole ring, and
+    rings here run 550-29,753 messages, a median of 97x more history than a
+    page. What a short page span really means is that a `since=`/`limit=`
+    cursor cannot keep up, so a client polling that way loses messages it never
+    sees; the messages are still there via /export.
+
+    Pass --ring to measure the actual ring per room. That is one multi-MB
+    download each, so it is off by default.
     """
     rooms, _ = parse_rooms(get("/rooms"))
     rows = []
@@ -355,13 +422,18 @@ def cmd_sweep(args):
         if len(ms) < 2:
             continue
         span = (_parse_ts(ms[-1]["ts"]) - _parse_ts(ms[0]["ts"])).total_seconds()
-        rows.append({
+        row = {
             "name": r["name"],
             "n": len(ms),
             "span": span,
             "rate": (len(ms) - 1) / span if span > 0 else float("inf"),
             "capped": len(ms) >= READ_WINDOW_MAX,
-        })
+        }
+        if getattr(args, "ring", False):
+            n_ring, ring_span = ring_extent(r["name"])
+            row["ring_n"] = n_ring
+            row["ring_span"] = ring_span
+        rows.append(row)
         time.sleep(0.05)
 
     rows.sort(key=lambda x: x["span"])
@@ -379,30 +451,40 @@ def cmd_sweep(args):
             }, sort_keys=True))
         return
 
-    print("# readable history per room, measured from the oldest and newest")
-    print("# timestamp inside a full %d-message window. One GET each." % READ_WINDOW_MAX)
-    print("%-44s %6s %12s %10s" % ("ROOM", "MSGS", "READABLE", "MSG/S"))
+    ring = getattr(args, "ring", False)
+    print("# span covered by ONE read page (%d messages max), per room." % READ_WINDOW_MAX)
+    print("# This is the page size, not the room's memory: /export returns the")
+    print("# whole ring, which holds far more. Use --ring to measure that too.")
+    hdr = "%-40s %6s %10s %9s" % ("ROOM", "MSGS", "PAGE SPAN", "MSG/S")
+    print(hdr + ("  %8s %10s" % ("RING", "RING SPAN") if ring else ""))
+
+    def human(sp):
+        if sp is None:
+            return "-"
+        return ("%.0fs" % sp if sp < 90 else
+                "%.0fm" % (sp / 60) if sp < 5400 else
+                "%.1fh" % (sp / 3600))
+
     for x in rows:
-        span = x["span"]
-        human = ("%.0fs" % span if span < 90 else
-                 "%.0fm" % (span / 60) if span < 5400 else
-                 "%.1fh" % (span / 3600))
-        print("%-44s %6d %12s %10.2f%s"
-              % (x["name"][:44], x["n"], human, x["rate"],
-                 "  *" if x["capped"] else ""))
+        line = ("%-40s %6d %10s %9.2f"
+                % (x["name"][:40], x["n"], human(x["span"]), x["rate"]))
+        if ring:
+            line += "  %8s %10s" % (x.get("ring_n") or "-", human(x.get("ring_span")))
+        print(line + ("  *" if x["capped"] else ""))
 
     capped = [x for x in rows if x["capped"]]
-    short = [x for x in capped if x["span"] < 300]
-    print("\n%d rooms measured, %d filled the 200-message window (*)."
-          % (len(rows), len(capped)))
-    if capped:
-        print("Of those, %d (%.0f%%) hold under 5 minutes of readable history."
-              % (len(short), 100.0 * len(short) / len(capped)))
-    if short:
-        med = sorted(x["span"] for x in short)[len(short) // 2]
-        print("Median readable history among them: %.0f seconds." % med)
-    print("# A room below a few minutes is write-only in practice: by the time")
-    print("# anyone fetches a cited seq, it is gone.")
+    print("\n%d rooms measured, %d filled the read page (*)." % (len(rows), len(capped)))
+    if ring:
+        gaps = [x["ring_span"] / x["span"] for x in rows
+                if x.get("ring_span") and x["span"] > 0]
+        if gaps:
+            gaps.sort()
+            print("Ring holds a median of %.0fx more history than one page."
+                  % gaps[len(gaps) // 2])
+    else:
+        print("# A short page span does NOT mean the room forgets. It means a")
+        print("# `since=`/`limit=` cursor cannot keep up and will skip messages")
+        print("# that /export still returns. Pass --ring to measure retention.")
 
 
 # ---- tclk frame validation ------------------------------------------------
@@ -679,8 +761,11 @@ def main():
     a.add_argument("--window", type=float, default=10.0)
     a.set_defaults(func=cmd_churn)
 
-    a = sub.add_parser("sweep", help="readable history for every listed room")
+    a = sub.add_parser("sweep", help="read-page span for every listed room")
     a.add_argument("--top", type=int, default=50)
+    a.add_argument("--ring", action="store_true",
+                   help="also measure each room's actual ring via /export "
+                        "(one multi-MB download per room)")
     a.add_argument("--jsonl", action="store_true",
                    help="one JSON object per room, for time-series collection")
     a.set_defaults(func=cmd_sweep)

@@ -622,8 +622,21 @@ def cmd_verify(args):
     the signature.
     """
     room = args.room
-    d = get_json("/r/%s?limit=%d&format=json" % (room, min(args.limit, READ_WINDOW_MAX)),
-                 timeout=40)
+    # The venue 503s in bursts. A verifier that dies on the first one reports
+    # nothing and looks like the service has no signatures, which is the exact
+    # wrong conclusion to hand anyone.
+    d = None
+    for _ in range(6):
+        try:
+            d = get_json("/r/%s?limit=%d&format=json"
+                         % (room, min(args.limit, READ_WINDOW_MAX)), timeout=40)
+            break
+        except Exception:
+            time.sleep(2)
+    if d is None:
+        print("room            : /r/%s" % room)
+        print("unreachable after 6 attempts - nothing checked, no conclusion drawn")
+        return
     ms = d.get("messages", [])
     ok = bad = skip = 0
     failures = []

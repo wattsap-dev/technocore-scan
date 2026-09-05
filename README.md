@@ -220,13 +220,19 @@ guessable. Four days after release:
 ```
 $ python3 technocore_scan.py tclk
 board: /r/tclk-offers
-  window seq 113144..113343, 200 messages read
-  tclk1 frames    : 200 of 200      distinct signers: 138
-  frame types     : {'accept': 84, 'offer': 73, 'reveal': 12, 'receipt': 12, 'lock': 11, 'refund': 8}
-  rails named     : {'paper': 69, 'x402': 3, 'flop-htlc': 1}
-  asset           : {'FLOP': 53, 'PAPER': 20}
-  lock kind       : {'hash': 73}
-  contracts seen  : 183, of which 20 reached a terminal frame
+  window seq 115173..115372, 200 messages read
+  prefixed `tclk1 `: 191 of 200 messages
+  schema-valid     : 178      distinct signers: 136
+  rejected         : 13 (7% of prefixed) — the prefix is not a filter,
+                     see flop-labs/tclk#89
+      8    missing on lock: ref
+      4    unknown field on offer: method
+      1    missing on offer: id,nonce,role
+  frame types     : {'offer': 95, 'accept': 72, 'refund': 6, 'lock': 3, 'reveal': 2}
+  rails named     : {'paper': 95, 'flop-htlc': 5, 'x402': 5}
+  asset           : {'FLOP': 69, 'PAPER': 26}
+  lock kind       : {'hash': 95}
+  contracts seen  : 174, of which 8 reached a terminal frame
 
 state pointers: /kv/tclk-<hh>
   shards sampled  : 16 of 256, 1062 pointers seen
@@ -236,25 +242,42 @@ capability token: tclk1: in DID notes
   notes sampled   : 125, advertising tclk1: 0 (0.00%)
 ```
 
+**Counting, first.** An earlier version of this section counted board frames by
+the `tclk1 ` prefix. [tclk#89](https://github.com/flop-labs/tclk/issues/89)
+showed that is not a filter — at least one fleet emits a variant dialect sharing
+the prefix that the reference decoder rejects. So the tool now validates every
+frame against the project's own `schema/tclk1-frames.schema.json` (required
+fields, `additionalProperties: false`, fail-closed) and prints both counts, so
+the gap stays visible instead of being assumed away in either direction. The
+correction moved the headline the *wrong way for comfort and the right way for
+the argument*: strict validation raises the paper share rather than lowering it,
+because the rejected frames were disproportionately the ones naming a real rail.
+
 Three things fall out of that.
 
-**The traction is real but it is rehearsal.** ~17,000 contracts in four days, 138
-distinct signers in a single 200-message window — and **95% of offers name
-`paper`**, the rail that settles nothing. Meanwhile 53 of 73 offers are
+**The traction is real but it is rehearsal.** ~17,000 contracts in four days, 136
+distinct signers in a single 200-message window — and **90% of valid offers name
+`paper`**, the rail that settles nothing. Meanwhile 69 of 95 offers are
 denominated in **FLOP**, a token that does not exist yet, on a rail that holds
 nothing. Nothing here is dishonest; the README says exactly this. It is worth
 recording because the raw contract count invites the opposite reading.
 
-**Half the protocol surface is untouched.** Every offer in the window used
+**Half the protocol surface is untouched.** Every valid offer in the window used
 `lock: hash`. The point-lock path — the one the README flags as *unaudited
 reference crypto*, full-Schnorr rather than BIP-340 — has zero exercise, so the
-part most in need of testing is getting none.
+part most in need of testing is getting none. This is the one result that has
+held across every window measured, by either counting method.
 
 **The discovery convention is dead on arrival.** The spec asks an agent that
 speaks tclk/1 to add a `tclk1:<rails>` token to its DID note so a counterparty
 can tell before spending a message. Across 125 sampled notes: **zero**. Agents
 found the board anyway — the board is a fixed, published name, so the
 advertisement it was paired with turns out to be unnecessary.
+
+**Quote the window with the number.** A 200-message read is the service's
+ceiling, not a sample of the board, and the composition moves: the paper share
+read 95% at seq 113k and 90% at seq 115k, two thousand messages later. Every
+figure above is true of its window and should be carried with it.
 
 ## Reporting
 

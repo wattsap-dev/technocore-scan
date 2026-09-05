@@ -404,6 +404,75 @@ def cmd_sweep(args):
     print("# A room below a few minutes is write-only in practice: by the time")
     print("# anyone fetches a cited seq, it is gone.")
 
+
+# ---- tclk frame validation ------------------------------------------------
+# flop-labs/tclk#89: the `tclk1 ` prefix is not a reliable filter. At least one
+# fleet emits a variant dialect sharing it, so a count has to say whether it
+# validated or just matched the prefix. This validates against the project's own
+# schema/tclk1-frames.schema.json — required fields plus additionalProperties
+# false — and every caller reports both numbers.
+
+_TCLK_SCHEMA_URL = ("https://raw.githubusercontent.com/flop-labs/tclk/main/"
+                    "schema/tclk1-frames.schema.json")
+_TCLK_DEFS = None
+
+
+def _tclk_defs():
+    """Frame definitions, from the local copy if present, else fetched once."""
+    global _TCLK_DEFS
+    if _TCLK_DEFS is not None:
+        return _TCLK_DEFS
+    local = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                         "schema-tclk1-frames.json")
+    raw = None
+    if os.path.exists(local):
+        raw = open(local).read()
+    else:
+        try:
+            with urllib.request.urlopen(_TCLK_SCHEMA_URL, timeout=20) as r:
+                raw = r.read().decode()
+        except Exception:
+            _TCLK_DEFS = {}
+            return _TCLK_DEFS
+    defs = {}
+
+    def walk(node):
+        if isinstance(node, dict):
+            props = node.get("properties", {})
+            const = props.get("type", {}).get("const") if isinstance(props.get("type"), dict) else None
+            if const:
+                defs[const] = (set(node.get("required", [])), set(props),
+                               node.get("additionalProperties") is False)
+            for v in node.values():
+                walk(v)
+        elif isinstance(node, list):
+            for v in node:
+                walk(v)
+
+    walk(json.loads(raw))
+    _TCLK_DEFS = defs
+    return defs
+
+
+def tclk_validate(obj):
+    """(ok, reason). Fail-closed, like the reference decoder."""
+    defs = _tclk_defs()
+    if not defs:
+        return True, "schema unavailable"
+    t = obj.get("type")
+    if t not in defs:
+        return False, "unknown frame type: %s" % t
+    required, allowed, closed = defs[t]
+    missing = required - set(obj)
+    if missing:
+        return False, "missing on %s: %s" % (t, ",".join(sorted(missing)))
+    if closed:
+        extra = set(obj) - allowed
+        if extra:
+            return False, "unknown field on %s: %s" % (t, ",".join(sorted(extra)))
+    return True, None
+
+
 # ---------------------------------------------------------------- tclk
 
 def cmd_tclk(args):
@@ -441,17 +510,24 @@ def cmd_tclk(args):
               % (d.get("first_seq"), d.get("last_seq"), len(ms)))
         kinds, rails, assets, locks = (collections.Counter() for _ in range(4))
         signers, amounts, contracts = set(), [], collections.defaultdict(set)
+        rejected = collections.Counter()
+        n_prefixed = 0
         for m in ms:
             t = m.get("text", "")
             if not t.startswith("tclk1 "):
                 continue
-            frames.append(m)
-            signers.add(m.get("from", ""))
+            n_prefixed += 1
             try:
                 o = json.loads(t[6:])
             except Exception:
-                kinds["unparseable"] += 1
+                rejected["not JSON"] += 1
                 continue
+            good, why = tclk_validate(o)
+            if not good:
+                rejected[why] += 1
+                continue
+            frames.append(m)
+            signers.add(m.get("from", ""))
             ty = o.get("type", "?")
             kinds[ty] += 1
             cid = o.get("id") or o.get("contract") or o.get("offerId")
@@ -466,8 +542,16 @@ def cmd_tclk(args):
                     amounts.append(int(o.get("amount", "0")))
                 except Exception:
                     pass
-        print("  tclk1 frames    : %d of %d      distinct signers: %d"
-              % (len(frames), len(ms), len(signers)))
+        print("  prefixed `tclk1 `: %d of %d messages" % (n_prefixed, len(ms)))
+        print("  schema-valid     : %d      distinct signers: %d"
+              % (len(frames), len(signers)))
+        if rejected:
+            tot = sum(rejected.values())
+            print("  rejected         : %d (%.0f%% of prefixed) — the prefix is not a filter,"
+                  % (tot, 100.0 * tot / max(1, n_prefixed)))
+            print("                     see flop-labs/tclk#89")
+            for r, n in rejected.most_common(4):
+                print("      %-4d %s" % (n, r))
         if kinds:
             print("  frame types     : %s" % dict(kinds.most_common()))
         if rails:

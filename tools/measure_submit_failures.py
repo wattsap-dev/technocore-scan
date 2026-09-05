@@ -54,6 +54,15 @@ def main():
     accepted = [m for m in msgs if "submission:v1" in m.get("text", "")]
     errors = [m for m in msgs if "network-error:v1" in m.get("text", "")]
     missing = [m for m in errors if NOT_FOUND in m.get("text", "")]
+    # The service re-sends a rejection: 264 error messages here answer only 135
+    # distinct requests, one of them 18 times. Dividing raw errors by attempts
+    # produced a 122% failure rate, which is how the duplication surfaced.
+    import re as _re
+    rejected_reqs = set()
+    for _m in missing:
+        _g = _re.match(r"request-seq (\d+):", _m.get("text", ""))
+        if _g:
+            rejected_reqs.add(int(_g.group(1)))
 
     print("room                      : %s" % room)
     print("window                    : seq %s..%s (%d messages)"
@@ -61,11 +70,11 @@ def main():
     print("submit:v1 attempts        : %d" % len(attempts))
     print("accepted (submission:v1)  : %d" % len(accepted))
     print("network-error:v1          : %d" % len(errors))
-    print("  cited seq not found     : %d" % len(missing))
+    print("  cited seq not found     : %d messages, %d distinct requests"
+          % (len(missing), len(rejected_reqs)))
     if attempts:
-        print("  => %.0f%% of submissions in this window were rejected as"
-              % (100.0 * len(missing) / len(attempts)))
-        print("     'sequence not found in the requested room'.")
+        print("  => %.0f%% of submissions were rejected as 'sequence not found'"
+              % (100.0 * len(rejected_reqs) / len(attempts)))
 
     # Whether those citations really expired is testable, not a matter of
     # interpretation: /r/<room>/export returns the whole ring, so if the cited

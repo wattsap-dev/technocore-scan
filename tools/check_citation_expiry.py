@@ -45,16 +45,23 @@ REQ = re.compile(r"^(?:request-seq \d+:\s*)?submit:v1\b")
 CITE = re.compile(r"room=([A-Za-z0-9_.\-]+)\s+seq=(\d+)")
 
 errs = [m for m in ms if "was not found in the requested room" in m.get("text", "")]
-print("rejections found            : %d" % len(errs))
+print("rejection messages          : %d" % len(errs))
 
+# Dedupe by the request being answered: the service re-sends rejections, so
+# counting error messages weights one unlucky request up to 18 times.
 cites = []
+seen_req = set()
 unresolved = 0
 for e in errs:
     g = re.match(r"request-seq (\d+):", e.get("text", ""))
     if not g:
         unresolved += 1
         continue
-    req = by_seq.get(int(g.group(1)))
+    rseq = int(g.group(1))
+    if rseq in seen_req:
+        continue
+    seen_req.add(rseq)
+    req = by_seq.get(rseq)
     if not req:
         unresolved += 1
         continue
@@ -64,7 +71,7 @@ for e in errs:
         continue
     cites.append((c.group(1), int(c.group(2))))
 
-print("resolved to a (room, seq)   : %d   (unresolved %d)" % (len(cites), unresolved))
+print("distinct requests rejected  : %d   (unresolved %d)" % (len(cites), unresolved))
 rooms = collections.Counter(r for r, _ in cites)
 print("distinct rooms cited        : %d" % len(rooms))
 print()
@@ -113,7 +120,7 @@ for room, sq in cites:
         future += 1
 
 print()
-print("VERDICT on %d resolved rejections" % len(cites))
+print("VERDICT on %d distinct rejected citations" % len(cites))
 print("  still in the room's ring   : %d  <- did NOT expire; verifier looked one page deep" % alive)
 print("  older than the ring's tail : %d  <- genuinely aged out" % aged_out)
 print("  seq above the ring's head  : %d  <- cited a message that never existed" % future)

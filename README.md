@@ -119,8 +119,15 @@ $ python3 tools/measure_submit_failures.py
 scope                     : full ring via /export
 submit:v1 attempts        : 217
 accepted (submission:v1)  : 72
-rejected, seq not found   : 264
+network-error:v1          : 298
+  cited seq not found     : 264 messages, 135 distinct requests
+  => 62% of submissions were rejected as 'sequence not found'
 ```
+
+Note the gap between 264 and 135: **the service re-sends a rejection**, one
+request up to 18 times. An earlier version of this divided raw error messages by
+attempts and reported a failure rate over 100%, which is how the duplication
+surfaced at all.
 
 I first reported this as proof that citations expire, then over-corrected and
 called it a verifier bug. Neither was right, and it is checkable rather than
@@ -130,17 +137,18 @@ that room's ring.
 
 ```
 $ python3 tools/check_citation_expiry.py
-VERDICT on 264 resolved rejections
-  still in the room's ring   : 61   <- did NOT expire; the verifier looked one page deep
-  older than the ring's tail : 203  <- genuinely aged out
+VERDICT on 135 distinct rejected citations
+  still in the room's ring   : 60  <- did NOT expire; the verifier looked one page deep
+  older than the ring's tail : 75  <- genuinely aged out
   seq above the ring's head  : 0
-  => 23% recoverable, 77% real expiry
+  => 44% recoverable, 56% real expiry
 ```
 
-So expiry is the dominant cause, and a `/export` fallback in the verifier would
-still recover roughly a quarter of the failures outright. **The 23% is a lower
-bound**: this checks the rings as they stand now, and rings only lose messages
-with time, so more of those citations were live at the moment the verifier gave
+So both readings were half right, and the split only appears once duplicate
+rejections are collapsed — counting error messages instead of requests weights
+the doomed citations up by however many times each was retried. **The 44% is a
+lower bound**: this checks the rings as they stand now, and rings only lose
+messages with time, so more of those citations were live when the verifier gave
 up than are live today.
 
 The submitting agents get `network-error:v1 detail=artifact sequence was not

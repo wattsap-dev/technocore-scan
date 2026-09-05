@@ -215,69 +215,76 @@ can't'."* The one rail that ships, `PaperRail`, *"settles nothing and backs it
 with nothing at all."*
 
 The spec fixes three observable surfaces, so uptake is measurable rather than
-guessable. Four days after release:
+guessable. Four days after release, measured over the board's **whole ring**:
 
 ```
 $ python3 technocore_scan.py tclk
 board: /r/tclk-offers
-  window seq 115173..115372, 200 messages read
-  prefixed `tclk1 `: 191 of 200 messages
-  schema-valid     : 178      distinct signers: 136
-  rejected         : 13 (7% of prefixed) — the prefix is not a filter,
+  seq 101929..117635, 15707 messages read
+  scope            : export (full ring)
+  prefixed `tclk1 `: 15482 of 15707 messages
+  schema-valid     : 14966      distinct signers: 1116
+  rejected         : 516 (3% of prefixed) — the prefix is not a filter,
                      see flop-labs/tclk#89
-      8    missing on lock: ref
-      4    unknown field on offer: method
-      1    missing on offer: id,nonce,role
-  frame types     : {'offer': 95, 'accept': 72, 'refund': 6, 'lock': 3, 'reveal': 2}
-  rails named     : {'paper': 95, 'flop-htlc': 5, 'x402': 5}
-  asset           : {'FLOP': 69, 'PAPER': 26}
-  lock kind       : {'hash': 95}
-  contracts seen  : 174, of which 8 reached a terminal frame
-
-state pointers: /kv/tclk-<hh>
-  shards sampled  : 16 of 256, 1062 pointers seen
-  contracts       : ~16,992 venue-wide
-
-capability token: tclk1: in DID notes
-  notes sampled   : 125, advertising tclk1: 0 (0.00%)
+      294  unknown field on offer: method
+      135  missing on lock: ref
+       48  missing on offer: id,nonce,role
+       20  missing on accept: nonce
+  frame types     : {'offer': 5791, 'accept': 4694, 'lock': 1597, 'reveal': 1302, 'receipt': 1193, 'refund': 389}
+  rails named     : {'paper': 5786, 'flop-htlc': 164, 'x402': 154, 'paperrail': 5, 'paper-rail': 4}
+  asset           : {'FLOP': 4302, 'PAPER': 1489}
+  lock kind       : {'hash': 5768, 'point': 23}
+                    point/PTLC: 23 of 5791 offers (0.4%) from 1 signer(s)
+                    those contracts reached: {'accept': 23}
+                    -> no point contract reached `lock`, so the
+                       adaptor-signature code still never runs
+  contracts seen  : 10723, of which 1689 reached a terminal frame
 ```
 
-**Counting, first.** An earlier version of this section counted board frames by
-the `tclk1 ` prefix. [tclk#89](https://github.com/flop-labs/tclk/issues/89)
-showed that is not a filter — at least one fleet emits a variant dialect sharing
-the prefix that the reference decoder rejects. So the tool now validates every
-frame against the project's own `schema/tclk1-frames.schema.json` (required
-fields, `additionalProperties: false`, fail-closed) and prints both counts, so
-the gap stays visible instead of being assumed away in either direction. The
-correction moved the headline the *wrong way for comfort and the right way for
-the argument*: strict validation raises the paper share rather than lowering it,
-because the rejected frames were disproportionately the ones naming a real rail.
+**Two corrections to how this was measured, in order.** First, an earlier
+version counted board frames by the `tclk1 ` prefix;
+[tclk#89](https://github.com/flop-labs/tclk/issues/89) showed that is not a
+filter, so the tool now validates every frame against the project's own
+`schema/tclk1-frames.schema.json` — required fields, `additionalProperties:
+false`, fail-closed — and prints both counts.
+
+Second, and worse: it measured through the 200-message read window, and
+`/r/<room>/export` returns the **whole ring**. Every figure that moved between
+windows — the paper share reading 95%, then 79%, then 88%, then 90% — was the
+window measuring itself. At ring scale the reject rate is a flat 3%, not the 7%
+or 10% a window showed and not the ~38% of #89's sample, and the paper share is
+94.6%, which is where it started. **The window was the noise.** If a number here
+can be read off `/export`, it now is.
 
 Three things fall out of that.
 
-**The traction is real but it is rehearsal.** ~17,000 contracts in four days, 136
-distinct signers in a single 200-message window — and **90% of valid offers name
-`paper`**, the rail that settles nothing. Meanwhile 69 of 95 offers are
-denominated in **FLOP**, a token that does not exist yet, on a rail that holds
-nothing. Nothing here is dishonest; the README says exactly this. It is worth
-recording because the raw contract count invites the opposite reading.
+**The traction is real but it is rehearsal.** 10,723 contracts on the ring,
+1,116 distinct signers — and **95% of offers name `paper`**, the rail that
+settles nothing. 4,302 of 5,791 offers are denominated in **FLOP**, a token that
+does not exist yet, on a rail that holds nothing. Nothing here is dishonest; the
+tclk README says exactly this. It is worth recording because the raw contract
+count invites the opposite reading.
 
-**Half the protocol surface is untouched.** Every valid offer in the window used
-`lock: hash`. The point-lock path — the one the README flags as *unaudited
-reference crypto*, full-Schnorr rather than BIP-340 — has zero exercise, so the
-part most in need of testing is getting none. This is the one result that has
-held across every window measured, by either counting method.
+**The point-lock path is exercised by one agent, and it stalls.** An earlier
+version of this section said *zero* point locks. That was true of a 200-message
+window and false of the board: there are 23, all from a single signer out of
+1,116, tagged `hermes-point-*` in their job ids — someone deliberately testing
+the path. All 23 were accepted. **None reached `lock`.** So the conclusion is not
+that nobody tries the unaudited adaptor-signature code — it is that the one
+agent trying cannot get a counterparty to complete, and the code still has never
+run. That is a sharper problem than absence, and it is invisible from a window.
 
 **The discovery convention is dead on arrival.** The spec asks an agent that
 speaks tclk/1 to add a `tclk1:<rails>` token to its DID note so a counterparty
-can tell before spending a message. Across 125 sampled notes: **zero**. Agents
-found the board anyway — the board is a fixed, published name, so the
-advertisement it was paired with turns out to be unnecessary.
+can tell before spending a message. Across sampled notes: **zero**. Agents found
+the board anyway — the board is a fixed, published name, so the advertisement it
+was paired with turns out to be unnecessary.
 
-**Quote the window with the number.** A 200-message read is the service's
-ceiling, not a sample of the board, and the composition moves: the paper share
-read 95% at seq 113k and 90% at seq 115k, two thousand messages later. Every
-figure above is true of its window and should be carried with it.
+Two smaller things worth recording: 83 of the 84 signers emitting rejected
+frames emit *only* rejected frames, which supports #89's reading that these are
+fleets speaking a variant dialect rather than intermittent bugs; and nine frames
+name the rail `paperrail` or `paper-rail` instead of `paper`, which a
+case-and-hyphen-insensitive rail lookup would absorb.
 
 ## Reporting
 

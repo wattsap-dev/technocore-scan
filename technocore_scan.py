@@ -496,21 +496,43 @@ def cmd_tclk(args):
         return None
 
     print("board: /r/tclk-offers")
-    raw = tries("/r/tclk-offers?limit=200&format=json", n=6, timeout=25)
-    try:
-        d = json.loads(raw) if raw else None
-    except Exception:
-        d = None
+    # /r/<room>/export returns the whole ring, not the 200-message read window.
+    # Measuring the board through a 200-message keyhole produced swings of
+    # 79-95% on figures that are stable at ring scale, so the window was
+    # measuring itself. Fall back to the window only if export is unavailable.
+    d, scope = None, "export (full ring)"
+    raw = tries("/r/tclk-offers/export", n=4, timeout=180)
+    if raw:
+        ms = []
+        for line in raw.splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                ms.append(json.loads(line))
+            except Exception:
+                continue
+        if ms:
+            d = {"messages": ms, "first_seq": ms[0].get("seq"),
+                 "last_seq": ms[-1].get("seq")}
+    if d is None:
+        scope = "200-message window (export unavailable)"
+        raw = tries("/r/tclk-offers?limit=200&format=json", n=6, timeout=25)
+        try:
+            d = json.loads(raw) if raw else None
+        except Exception:
+            d = None
     frames = []
     if d is None:
         print("  unreachable")
     else:
         ms = d.get("messages", [])
-        print("  window seq %s..%s, %d messages read"
+        print("  seq %s..%s, %d messages read"
               % (d.get("first_seq"), d.get("last_seq"), len(ms)))
         kinds, rails, assets, locks = (collections.Counter() for _ in range(4))
         signers, amounts, contracts = set(), [], collections.defaultdict(set)
         rejected = collections.Counter()
+        pt_signers, pt_ids = set(), set()
         n_prefixed = 0
         for m in ms:
             t = m.get("text", "")
@@ -530,18 +552,28 @@ def cmd_tclk(args):
             signers.add(m.get("from", ""))
             ty = o.get("type", "?")
             kinds[ty] += 1
-            cid = o.get("id") or o.get("contract") or o.get("offerId")
-            if cid:
+            # A frame names the deal it belongs to differently depending on
+            # its type: an offer carries `id`, while accept/lock/reveal carry
+            # `ref` pointing back at that offer (`contract` is the deal's own
+            # hash, not the offer's). Keying on `id`/`contract` alone silently
+            # detaches every reply from the offer it answers.
+            for cid in {o.get("id"), o.get("ref"), o.get("contract"),
+                        o.get("offerId")} - {None}:
                 contracts[cid].add(ty)
             if ty == "offer":
                 for r in o.get("rails") or []:
                     rails[r] += 1
                 assets[o.get("asset", "?")] += 1
                 locks[o.get("lock", "?")] += 1
+                if o.get("lock") == "point":
+                    pt_signers.add(m.get("from", ""))
+                    if o.get("id"):
+                        pt_ids.add(o["id"])
                 try:
                     amounts.append(int(o.get("amount", "0")))
                 except Exception:
                     pass
+        print("  scope            : %s" % scope)
         print("  prefixed `tclk1 `: %d of %d messages" % (n_prefixed, len(ms)))
         print("  schema-valid     : %d      distinct signers: %d"
               % (len(frames), len(signers)))
@@ -566,8 +598,24 @@ def cmd_tclk(args):
             print("  asset           : %s" % dict(assets.most_common()))
         if locks:
             print("  lock kind       : %s" % dict(locks.most_common()))
-            if not locks.get("point"):
-                print("                    point/PTLC path unexercised in this window")
+            n_pt = locks.get("point", 0)
+            if not n_pt:
+                print("                    no point/PTLC offers in this sample")
+            else:
+                # "how many offers" is the wrong question for the adaptor-signature
+                # code: an offer that never reaches `lock` never runs it. Report
+                # how far the point path actually gets.
+                reached = collections.Counter()
+                for cid in pt_ids:
+                    reached.update(contracts.get(cid, set()) - {"offer"})
+                print("                    point/PTLC: %d of %d offers (%.1f%%) from %d signer(s)"
+                      % (n_pt, sum(locks.values()),
+                         100.0 * n_pt / max(1, sum(locks.values())), len(pt_signers)))
+                print("                    those contracts reached: %s"
+                      % (dict(reached.most_common()) or "nothing past the offer"))
+                if not reached.get("lock"):
+                    print("                    -> no point contract reached `lock`, so the")
+                    print("                       adaptor-signature code still never runs")
         if amounts:
             amounts.sort()
             print("  amount (minimal): median %d, max %d" % (amounts[len(amounts) // 2], amounts[-1]))

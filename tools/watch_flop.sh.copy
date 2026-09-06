@@ -1,0 +1,171 @@
+#!/bin/zsh
+# Watch for the FLOP testnet opening.
+#
+# The airdrop rewards testnet participation, and the testnet is a ~90-day
+# window somewhere in Q4 2026 with no announced start date. Missing the
+# opening is the one failure mode that cannot be recovered later, so this
+# checks daily for the signals that would appear first:
+#
+#   1. flop.finance's front page changing (new links, new copy, a 4th form)
+#   2. technocore.chat announcing rooms whose names look like a testnet
+#
+# On a change it logs the diff and raises a macOS notification.
+# Read-only: it never writes to any service.
+#
+# flop.finance answers intermittently (and its apex fails TLS, so www first),
+# so a fetch only counts when it comes back large enough AND carries a marker
+# string. An empty or truncated reply is "unreachable", never a new baseline —
+# otherwise one bad fetch poisons the comparison and every later check either
+# false-alarms or silently compares against garbage.
+
+set -u
+
+DIR="${0:A:h}"
+STATE="$DIR/flop-watch"
+LOG="$STATE/watch.log"
+MIN_BYTES=500
+MARKER="flop"
+
+mkdir -p "$STATE"
+
+# Check GitHub FIRST, before any of the site logic can exit early. Watching only
+# flop.finance is what let the tokenomics AMA pass unnoticed during a six-day
+# outage -- and a site being down is precisely when the other surface matters.
+# GitHub is where this project actually ships (tclk, 2026-09-01).
+"$DIR/watch_flop_github.sh" || true
+
+ts() { date "+%Y-%m-%d %H:%M" }
+note() { print "$(ts)  $1" >> "$LOG" }
+
+alert() {
+    note "ALERT: $1"
+    /usr/bin/osascript -e "display notification \"$1\" with title \"FLOP testnet watch\" sound name \"Glass\"" 2>/dev/null
+}
+
+extract() {
+    /usr/bin/python3 -c '
+import re,sys
+h=sys.stdin.read()
+if len(h) < 200: sys.exit(1)
+t=re.sub(r"<script[\s\S]*?</script>|<style[\s\S]*?</style>|<!--[\s\S]*?-->"," ",h)
+links=sorted(set(re.findall(r"href=\"([^\"]+)\"",h)))
+t=re.sub(r"<[^>]+>"," ",t); t=re.sub(r"\s+"," ",t).strip()
+sys.stdout.write(t+"\n"+"\n".join(links)+"\n")
+'
+}
+
+# fetch_front <outfile> -> 0 on a reply that is plausibly the real page
+fetch_front() {
+    local out="$1" host
+    for i in 1 2 3 4 5; do
+        for host in www.flop.finance flop.finance; do
+            if /usr/bin/curl -s --max-time 25 -A "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)" \
+                 "https://$host/" 2>/dev/null | extract > "$out" 2>/dev/null; then
+                if [[ -s "$out" ]] \
+                   && (( $(wc -c < "$out") >= MIN_BYTES )) \
+                   && /usr/bin/grep -qi "$MARKER" "$out"; then
+                    return 0
+                fi
+            fi
+            rm -f "$out"
+        done
+        sleep 10
+    done
+    return 1
+}
+
+# ---- 1. flop.finance front page -------------------------------------------
+
+CUR="$STATE/flop.txt"
+NEW="$STATE/flop.new"
+
+# discard a baseline captured before this guard existed
+if [[ -f "$CUR" ]] && ( (( $(wc -c < "$CUR") < MIN_BYTES )) || ! /usr/bin/grep -qi "$MARKER" "$CUR" ); then
+    note "discarding unusable baseline ($(wc -c < "$CUR") bytes)"
+    rm -f "$CUR"
+fi
+
+# flop.finance's TLS handshake fails outright for stretches — port 443 accepts
+# the connection and then never completes, on both the apex and www. While the
+# KOL application form is still unsubmitted, coming back up is itself news, so
+# track reachability across runs and say so on the transition.
+DOWN="$STATE/was-unreachable"
+
+if fetch_front "$NEW"; then
+    if [[ -f "$DOWN" ]]; then
+        rm -f "$DOWN"
+        alert "flop.finance is back up - the apply form should load now"
+    fi
+    if [[ ! -f "$CUR" ]]; then
+        mv "$NEW" "$CUR"
+        note "baseline captured ($(wc -c < "$CUR") bytes)"
+    elif ! /usr/bin/diff -q "$CUR" "$NEW" >/dev/null 2>&1; then
+        note "flop.finance CHANGED:"
+        /usr/bin/diff "$CUR" "$NEW" | head -40 >> "$LOG"
+        mv "$NEW" "$CUR"
+        alert "flop.finance changed - check ~/.technocore/flop-watch/watch.log"
+    else
+        rm -f "$NEW"
+        note "flop.finance unchanged"
+    fi
+else
+    rm -f "$NEW"
+    touch "$DOWN"
+    note "flop.finance unreachable (5 attempts, both hosts) - no baseline touched"
+fi
+
+# ---- 2. new rooms that look like a testnet --------------------------------
+
+SEEN="$STATE/rooms-seen.txt"
+touch "$SEEN"
+
+HITS=$(/usr/bin/curl -s --max-time 25 "https://technocore.chat/r/events?limit=200" 2>/dev/null \
+    | /usr/bin/grep -oE 'created [a-z0-9][a-z0-9_-]*' \
+    | /usr/bin/sed 's/^created //' \
+    | /usr/bin/grep -iE 'testnet|devnet|faucet|genesis|mainnet|miner|inference|flop-test|incentiv' \
+    | /usr/bin/sort -u)
+
+if [[ -n "$HITS" ]]; then
+    NEWROOMS=$(print "$HITS" | /usr/bin/grep -vxF -f "$SEEN" 2>/dev/null)
+    if [[ -n "$NEWROOMS" ]]; then
+        # A name is not an event. Agents here open rooms straight off news
+        # headlines -- "flop-aave-v4-testnet-goes-live" was two of them, one
+        # message each, nothing to do with this project -- and an alert that
+        # fires on every such name is desensitised before the real one arrives.
+        # So log every match, but only WAKE somebody for a room that has actual
+        # traffic: several messages from several distinct signers. A headline
+        # bot leaves exactly one message from one DID and never returns.
+        note "new testnet-shaped rooms (logged; alert needs real traffic):"
+        print "$NEWROOMS" | /usr/bin/sed 's/^/           /' >> "$LOG"
+        print "$NEWROOMS" >> "$SEEN"
+
+        SUBSTANTIVE=$(print "$NEWROOMS" | /usr/bin/python3 -c '
+import json, sys, urllib.request
+
+MIN_MSGS, MIN_SIGNERS = 5, 3
+for room in (l.strip() for l in sys.stdin if l.strip()):
+    try:
+        with urllib.request.urlopen(
+                "https://technocore.chat/r/%s?limit=200&format=json" % room,
+                timeout=20) as r:
+            d = json.load(r)
+    except Exception:
+        continue
+    ms = d.get("messages") or []
+    signers = {m.get("from") for m in ms}
+    if len(ms) >= MIN_MSGS and len(signers) >= MIN_SIGNERS:
+        print("%s (%d msgs, %d signers)" % (room, len(ms), len(signers)))
+' 2>/dev/null)
+
+        if [[ -n "$SUBSTANTIVE" ]]; then
+            note "  -> has real traffic: $(print "$SUBSTANTIVE" | tr '\n' ' ')"
+            alert "testnet-shaped room with real traffic: $(print "$SUBSTANTIVE" | head -1)"
+        else
+            note "  -> all one-message headline rooms; no alert raised"
+        fi
+    fi
+fi
+
+if [[ -f "$LOG" ]] && (( $(wc -l < "$LOG") > 400 )); then
+    tail -200 "$LOG" > "$LOG.tmp" && mv "$LOG.tmp" "$LOG"
+fi

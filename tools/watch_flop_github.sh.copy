@@ -1,0 +1,108 @@
+#!/bin/zsh
+# Watch the flop-labs GitHub org for the testnet.
+#
+# This exists because of a real miss. The site watcher has reported
+# "unreachable" every hour for six days while flop.finance is down, and in that
+# window Flop Labs held the tokenomics AMA that changed what the airdrop
+# actually rewards. Watching one surface that happened to be dark meant
+# watching nothing.
+#
+# GitHub is the surface that has actually carried this project's releases:
+# tclk shipped there on 2026-09-01. It answers reliably, needs no auth, and a
+# testnet will almost certainly appear as a repo, a release, or a tag before it
+# appears anywhere a human has to write prose.
+#
+# Read-only. Unauthenticated on purpose: `gh` would use the local token and see
+# private repos, which is exactly the thing that must not be mistaken for a
+# public release.
+set -u
+DIR="${0:A:h}"
+STATE="$DIR/flop-watch"
+LOG="$STATE/watch.log"
+API="https://api.github.com"
+ORG="flop-labs"
+UA="technocore-scan-watch"
+mkdir -p "$STATE"
+
+now() { date "+%Y-%m-%d %H:%M" }   # local, to match the shared log
+note() { print -r -- "$(now)  $*" >> "$LOG" }
+
+fetch() {  # fetch <path> <outfile> -> 0 if it looks like a real API reply
+  local out="$2"
+  curl -sS --max-time 40 -H "User-Agent: $UA" \
+       -H "Accept: application/vnd.github+json" "$API$1" -o "$out" 2>/dev/null || return 1
+  # a rate-limit body or an error page is not a baseline
+  grep -q '"full_name"\|"tag_name"\|^\[\]' "$out" || return 1
+  [ "$(wc -c < "$out")" -ge 2 ] || return 1
+  return 0
+}
+
+REPOS_NEW="$STATE/gh-repos.new"
+REPOS="$STATE/gh-repos.txt"
+
+if ! fetch "/orgs/$ORG/repos?per_page=100&sort=updated" "$REPOS_NEW"; then
+  note "github api unreachable or rate-limited - no baseline touched"
+  rm -f "$REPOS_NEW"
+  exit 0
+fi
+
+python3 - "$REPOS_NEW" > "$STATE/gh-repos.parsed" <<'PY'
+import json, sys
+try:
+    d = json.load(open(sys.argv[1]))
+except Exception:
+    raise SystemExit(1)
+if not isinstance(d, list):
+    raise SystemExit(1)
+for r in sorted(d, key=lambda x: x.get("name", "")):
+    print("%s\t%s\t%s" % (r.get("name"), r.get("pushed_at"), (r.get("description") or "")[:90]))
+PY
+if [ $? -ne 0 ] || [ ! -s "$STATE/gh-repos.parsed" ]; then
+  note "github repo list unparseable - no baseline touched"
+  rm -f "$REPOS_NEW"
+  exit 0
+fi
+
+if [ ! -f "$REPOS" ]; then
+  cp "$STATE/gh-repos.parsed" "$REPOS"
+  note "github baseline established: $(wc -l < "$REPOS" | tr -d ' ') repos in $ORG"
+  rm -f "$REPOS_NEW"
+  exit 0
+fi
+
+# A NEW repo is the signal that matters most; a push to an existing one is
+# worth logging but is routine.
+NEW_REPOS=$(comm -13 <(cut -f1 "$REPOS" | sort) <(cut -f1 "$STATE/gh-repos.parsed" | sort))
+CHANGED=$(diff "$REPOS" "$STATE/gh-repos.parsed" | grep -c '^>' || true)
+
+if [ -n "$NEW_REPOS" ]; then
+  note "NEW REPO in $ORG: $(print -r -- $NEW_REPOS | tr '\n' ' ')"
+  # A notification that only says "something appeared" costs a round trip before
+  # anyone can act. The airdrop condition Flop Labs stated is "you run inference
+  # on testnet, you earn", and the testnet client will arrive as a repository
+  # here -- so capture the entry points at detection time and put them in the
+  # log, so the notification arrives with the quickstart already read.
+  for R in ${(f)NEW_REPOS}; do
+    [ -n "$R" ] || continue
+    mkdir -p "$STATE/new-repos"
+    for F in README.md QUICKSTART.md docs/quickstart.md SPEC.md; do
+      BODY=$(curl -sS --max-time 30 -H "User-Agent: $UA" \
+        "https://raw.githubusercontent.com/$ORG/$R/main/$F" 2>/dev/null)
+      case "$BODY" in
+        ""|"404: Not Found") continue ;;
+      esac
+      print -r -- "$BODY" > "$STATE/new-repos/$R.${F//\//_}"
+      note "  captured $R/$F ($(print -r -- "$BODY" | wc -c | tr -d ' ') bytes)"
+      note "  first lines of $R/$F:"
+      print -r -- "$BODY" | head -12 | sed 's/^/           /' >> "$LOG"
+      break
+    done
+  done
+  osascript -e "display notification \"New flop-labs repo: $(print -r -- $NEW_REPOS | tr '\n' ' ') - quickstart captured to the log\" with title \"FLOP\" sound name \"Glass\"" 2>/dev/null
+elif [ "$CHANGED" -gt 0 ]; then
+  note "$CHANGED repo(s) pushed in $ORG: $(diff "$REPOS" "$STATE/gh-repos.parsed" | grep '^>' | cut -f1 | sed 's/^> //' | tr '\n' ' ')"
+else
+  note "github: no change ($(wc -l < "$REPOS" | tr -d ' ') repos)"
+fi
+cp "$STATE/gh-repos.parsed" "$REPOS"
+rm -f "$REPOS_NEW"

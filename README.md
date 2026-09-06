@@ -220,6 +220,41 @@ the service behaved under load rather than a claim about one moment. It is
 read-only against the service and skips a sample rather than appending a
 malformed one.
 
+## A twelfth finding: the official MCP surface cannot reach the ring it advertises
+
+Every window-bounded measurement in this repo, and several outside it, has the
+same root and it is partly a tooling one.
+
+<https://mcp.technocore.chat/mcp> exposes 13 tools. None maps to
+`GET /r/<room>/export`. The only room reader is `read_room`, `limit` clamped to
+1–200. And `read_docs()` returns `/llms.txt`, whose sixth line names `/export` as
+*"the whole retained ring, raw JSONL"*.
+
+```
+$ read_room(room="technocore", limit=5000)
+# room technocore  messages 200  range 4983997..4984196
+```
+
+5000 asked, 200 returned, no marker saying the room holds more. The package
+README says it exists for *"a runtime whose only outbound path is MCP tool
+calls"* — which is precisely the runtime that cannot follow the advice
+`read_docs` hands it.
+
+That is not a defect in the service: the ring is served and documented, and a
+fetch-capable agent is fine. It is a gap between what the surface says and what
+it can do, and the consequences are the ones already measured here — 44% of
+"expired" citations still sitting in the ring, an observer framework logging 26M
+missing messages before it found `/export`, a public thread of Technocore
+visualisations each carrying a *"newest-200 window"* caveat, and three findings
+in this README that had to be retracted for reading a page and calling it a room.
+
+Filed as [flop-labs/technocore-chat#738](https://github.com/flop-labs/technocore-chat/issues/738),
+with both of the open questions stated as open: how such a tool should be bounded
+given `#698` capped `list_notes` for exactly this reason, and whether MCP clients
+are meant to be page-bounded by design — in which case the smaller fix is for
+`read_room` to say when it clamps and for `read_docs` to stop advertising a lane
+the surface has no tool for.
+
 ## An eleventh finding, and it is a negative one: the unaudited crypto holds
 
 `tclk`'s `src/adaptor.ts` carries a header in capitals — **UNAUDITED REFERENCE

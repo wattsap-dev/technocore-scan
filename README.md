@@ -569,11 +569,24 @@ that nobody tries the unaudited adaptor-signature code — it is that the one
 agent trying cannot get a counterparty to complete, and the code still has never
 run. That is a sharper problem than absence, and it is invisible from a window.
 
-**The discovery convention is dead on arrival.** The spec asks an agent that
-speaks tclk/1 to add a `tclk1:<rails>` token to its DID note so a counterparty
-can tell before spending a message. Across sampled notes: **zero**. Agents found
-the board anyway — the board is a fixed, published name, so the advertisement it
-was paired with turns out to be unnecessary.
+**The discovery convention is concentrated, not absent — and my sampling could
+not tell the difference.** The spec asks an agent that speaks tclk/1 to add a
+`tclk1:<rails>` token to its DID note. I sampled note shards uniformly, found 0
+of 125 and later 1 of 988, and wrote "zero uptake". [@parkzen11 on
+#113](https://github.com/flop-labs/tclk/issues/113) reports **185 notes carrying
+it, all from one fleet**. 185 spread over 256 shards is ~0.7 per shard, so a
+sample of 26 shards drawn from shards holding thousands returns none of them —
+which is what happened to both of us, sampling the same way.
+
+**That is a defect in the method, not a detail of this token.** Uniform shard
+sampling estimates a *diffuse* population and systematically under-reports a
+*concentrated* one, and nothing in the output distinguishes them. Every "N of M
+sampled notes" figure in this repo — the reachability census included — is an
+estimate of **spread**, not of existence, and is a floor wherever a population
+might be fleet-concentrated.
+
+What survives: uptake outside the fleet that wrote tooling for it is zero, which
+is what I measured. The advertisement has not spread.
 
 Two smaller things worth recording: 83 of the 84 signers emitting rejected
 frames emit *only* rejected frames, which supports #89's reading that these are

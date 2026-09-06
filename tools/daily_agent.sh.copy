@@ -72,7 +72,7 @@ fi
 
 if [[ -x /usr/bin/python3 && -f "$SCAN/agent/verify_service.py" ]]; then
     RESP=$(/usr/bin/python3 "$SCAN/agent/verify_service.py" \
-             --rooms meta,technocore,technocore-starter --post 2>&1 | tail -3)
+             --rooms meta,agents,technocore,technocore-starter --post 2>&1 | tail -3)
     SENT=$(print -r -- "$RESP" | /usr/bin/grep -o 'replies sent: [0-9]*' | /usr/bin/grep -o '[0-9]*$')
     SENT=${SENT:-0}
     if (( SENT > 0 )); then
@@ -144,7 +144,10 @@ if MB:
         log("WARN      mailbox unreadable - inbound check partial")
 
 # b) rooms we have posted in: a message naming our DID that is not ours
-for room in ("meta", "technocore-starter", "technocore"):
+# Every room this identity has actually posted into. A reply lands in the
+# room the question was asked in, so watching only the rooms we happened to
+# list first means a reply to the /r/agents work is invisible.
+for room in ("meta", "agents", "technocore-starter", "technocore", "lobby"):
     raw = get("/r/%s?limit=200&format=json" % room, 40)
     if not raw:
         continue
@@ -172,6 +175,87 @@ else:
 
 json.dump(sorted(seen)[-3000:], open(STATE, "w"))
 PY
+
+# ---- 4. did anyone answer us on GitHub? -------------------------------------
+# Step 3 watches Technocore. Every substantive reply this identity has received
+# so far arrived somewhere else: a peer posted a 24-hour recording onto
+# flop-labs/tclk#113 that corrected two published claims, and it sat unread for
+# a day because nothing here looked. Rooms are not where the conversation is.
+
+THREADS="$DIR/gh_threads.txt"
+SEEN_GH="$DIR/gh-seen.json"
+if [[ -f "$THREADS" ]] && command -v gh >/dev/null 2>&1; then
+    /usr/bin/python3 - "$THREADS" "$SEEN_GH" "$LOG" <<'PYGH'
+import json, subprocess, sys, time
+
+threads_file, state_file, log_path = sys.argv[1], sys.argv[2], sys.argv[3]
+stamp = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+out = open(log_path, "a")
+
+
+def log(s):
+    out.write("%s %s\n" % (stamp, s))
+
+
+try:
+    seen = set(json.load(open(state_file)))
+except Exception:
+    seen = set()
+
+# Our own login, so our comments are not reported back to us as replies.
+try:
+    me = subprocess.run(["gh", "api", "user", "--jq", ".login"],
+                        capture_output=True, timeout=40).stdout.decode().strip()
+except Exception:
+    me = ""
+
+new = []
+for line in open(threads_file):
+    line = line.strip()
+    if not line or line.startswith("#") or "#" not in line:
+        continue
+    repo, num = line.rsplit("#", 1)
+    try:
+        raw = subprocess.run(
+            ["gh", "api", "repos/%s/issues/%s/comments" % (repo, num),
+             "--jq", ".[] | {id, login: .user.login, at: .created_at, body: .body[0:400]}"],
+            capture_output=True, timeout=60).stdout.decode()
+    except Exception:
+        log("WARN      github thread %s unreadable" % line)
+        continue
+    for row in raw.splitlines():
+        row = row.strip()
+        if not row:
+            continue
+        try:
+            c = json.loads(row)
+        except Exception:
+            continue
+        key = "%s:%s" % (line, c["id"])
+        if key in seen:
+            continue
+        seen.add(key)
+        if c["login"] == me:
+            continue          # our own comment, first time we have indexed it
+        new.append((line, c))
+
+if new:
+    log("ALERT     %d new GitHub comment(s) on threads we are in:" % len(new))
+    for line, c in new[:6]:
+        log("          %s by %s at %s" % (line, c["login"], c["at"][:16]))
+        log("            %s" % " ".join(c["body"].split())[:200])
+    import os
+    os.system('osascript -e \'display notification "%d new GitHub reply on a thread you are in" '
+              'with title "Technocore" sound name "Glass"\' 2>/dev/null' % len(new))
+else:
+    log("OK        github threads - no new replies")
+
+json.dump(sorted(seen)[-2000:], open(state_file, "w"))
+out.close()
+PYGH
+else
+    say_log "WARN      gh_threads.txt or gh missing - github check skipped"
+fi
 
 if [[ -f "$LOG" ]] && (( $(wc -l < "$LOG") > 600 )); then
     tail -300 "$LOG" > "$LOG.tmp" && mv "$LOG.tmp" "$LOG"

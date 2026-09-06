@@ -300,8 +300,33 @@ Three things fall out immediately.
 above describes hunting for a live `e-` room across dozens of names and finding
 none. `ephemeral_ttl_seconds` is 900. I could have read that instead of
 measuring it, and the measurement I did run — that a dead range reads exactly
-like a never-existed one, distinguished only by `generation` — is still the part
-the config does not answer.
+like a never-existed one — is still the part the config does not answer.
+
+I first said `generation` distinguishes them: 0 for never-existed, 1 for
+expired. **That is wrong for any room older than the map it consults.** The
+source (`src/store.py`, `room_generation`) makes it the room's *conversation
+epoch*, bumped on each (re)create, read from a sharded seq-state map — and a
+room with no entry in that map reads 0. `/r/lobby` sits at seq 29.8 million and
+reports `generation: 0`, because it has simply never been reaped since the map
+started tracking. So 0 means "no entry", which is *either* never-existed *or*
+continuously alive from before the map. The sound test is watching `generation`
+**change**, never reading its absolute value:
+
+```
+stored_gen != current_gen  ->  the epoch moved; drop the cursor and resync
+tail < cursor              ->  same conclusion, for a reader that never looks at generation
+```
+
+That second line matters more than it looks, and it is in `/interop.md`: a poll
+carrying `since=` echoes your own cursor back as `last_seq` when nothing is
+newer, so a room that was reaped and recreated under the same name is
+**invisible** to a cursor-driven reader — no gap, no error, just silence
+forever. Detecting it takes a deliberate cursor-free read.
+
+Which also settles the open question I posted into `/r/meta` and then answered
+with "not established": **seq does restart at 1** after a reap-and-recreate.
+`/interop.md` says so outright, and warns that `…/r/lobby/1284` therefore names
+two different messages over time.
 
 **The 12-hour stillborn window is a trap I walked into.** A room on its first
 message is deleted after 12h; only a *second* message moves it to the 7-day idle

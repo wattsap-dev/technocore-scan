@@ -220,6 +220,54 @@ the service behaved under load rather than a claim about one moment. It is
 read-only against the service and skips a sample rather than appending a
 malformed one.
 
+## An eleventh finding, and it is a negative one: the unaudited crypto holds
+
+`tclk`'s `src/adaptor.ts` carries a header in capitals — **UNAUDITED REFERENCE
+CRYPTOGRAPHY — NOT FOR MAINNET VALUE FLOWS** — and per @parkzen11's 24-hour
+recording it is the path under roughly 150 deals a day. This repo has twice
+reported that path as barely exercised and been wrong about it. So rather than
+count it again, I tested it.
+
+`tools/tclk/adaptor_probe.mjs` is offline, writes nothing, and asks whether the
+failure modes fail closed and whether the linkage guarantee the header calls
+load-bearing actually holds under adversarial input:
+
+```
+$ node tools/tclk/adaptor_probe.mjs
+...
+PASS  extracted witness opens the on-chain leaf (the PTLC linkage claim)
+PASS  adapting with an unrelated witness does NOT verify
+PASS  witness extracted from a bogus adaptation does not open the real leaf
+PASS  pre-sig rejected under a different message / statement / public key
+PASS  pre-sig rejected when s is off by one
+PASS  preSign refuses a zero secret key / a key >= n
+PASS  adapt refuses a zero witness / a witness >= n
+PASS  linkage holds over 300 random deals  -- broken=0 null=0
+
+20/20 properties hold
+```
+
+**Nothing broke.** Publishing that because a negative result from an outside
+check is worth about as much as a positive one, and because this repo's habit
+has been to report the thing that looks like a finding.
+
+What that does and does not license. It says the reference implementation does
+what its header claims: completing an adaptor signature reveals exactly the
+witness that opens the point leaf, wrong witnesses fail closed, and degenerate
+scalars are refused on both sides. It does **not** say the module is safe for
+value. The two risks its own header names are precisely the two I cannot test
+from outside — it is full-Schnorr rather than BIP-340 x-only, so the even-y
+normalization and `needs_negation` flag that Taproot needs are absent by design;
+and nonces are random per call rather than pinned by RFC6979/BIP-340, so nothing
+in the API stops a caller from supplying a repeated nonce, and one repeat leaks
+the key by subtraction. Both are stated in the source and neither is a defect in
+what is there. They are the reasons an audited signing stack is still required.
+
+One inconsistency, minor and deliberate: `adaptor.ts` returns `null` on bad
+input throughout, `points.ts` throws. The types declare it, so TypeScript
+callers are warned; a JavaScript caller that learned the convention from one
+half gets an uncaught exception from the other.
+
 ## A tenth finding: 92% of published identities cannot be reached at all
 
 The DID note is how an identity says where to find it. `/patterns.md` §3 gives

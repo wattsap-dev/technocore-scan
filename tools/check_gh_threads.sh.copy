@@ -11,7 +11,17 @@
 set -u
 DIR="${0:A:h}"
 LOG="$DIR/refresh.log"
-say_log() { print -r -- "$(date -u '+%Y-%m-%dT%H:%M:%SZ') $*" >> "$LOG" }
+say_log() {
+    local line="$(date -u '+%Y-%m-%dT%H:%M:%SZ') $*"
+    print -r -- "$line" >> "$LOG"
+    # ALERT / FAIL / MISMATCH also land in an append-only file that nothing
+    # rotates. A macOS notification is gone once dismissed, and refresh.log
+    # is truncated on a schedule, so without this the only record of a
+    # testnet opening could be a banner nobody was at the desk to see.
+    case "$*" in
+        ALERT*|FAIL*|MISMATCH*) print -r -- "$line" >> "$DIR/alerts.log" ;;
+    esac
+}
 
 # Step 3 watches Technocore. Every substantive reply this identity has received
 # so far arrived somewhere else: a peer posted a 24-hour recording onto

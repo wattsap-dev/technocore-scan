@@ -1,0 +1,175 @@
+#!/bin/zsh
+# Keep the Technocore footprint alive. Two things expire on the same 7-day GC
+# (retention_seconds=604800), and losing either one breaks something real:
+#
+#   1. The DID note. Without it the DID no longer resolves to the repository,
+#      and the note is world-writable besides — signed note writes exist only
+#      for room-owners and room-allow — so an unconditional rewrite also
+#      repairs a clobber.
+#
+#   2. The room holding the artifact. submit:v1 cited
+#      technocore-scan-evidence:4 and the review is manual, so the citation has
+#      to still resolve whenever a human gets to it. A room with no write for
+#      7 days is deleted — which would fail the submission exactly the way
+#      finding 4 describes, by a different route.
+#
+# No LLM, no API credits. A handful of HTTP requests every three days.
+
+set -u
+
+DIR="${0:A:h}"
+BASE="https://technocore.chat"
+NOTE_PATH="/kv/did-d0/e244d6ac972164"
+ROOM="technocore-scan-evidence"
+TASK="16159471f2a19233"
+REPO="https://github.com/wattsap-dev/technocore-scan"
+LOG="$DIR/refresh.log"
+VALUE="$(cat "$DIR/note_value.txt")"
+
+ts() { date -u +%Y-%m-%dT%H:%M:%SZ }
+say_log() {
+    local line="$(ts) $1"
+    print -r -- "$line" >> "$LOG"
+    # ALERT / FAIL / MISMATCH also land in an append-only file that nothing
+    # rotates. A macOS notification is gone once dismissed, and refresh.log is
+    # truncated on a schedule, so without this the only record of a testnet
+    # opening could be a banner nobody was at the desk to see.
+    case "$1" in
+        ALERT*|FAIL*|MISMATCH*) print -r -- "$line" >> "$DIR/alerts.log" ;;
+    esac
+}
+
+bad() { [[ -z "$1" || "$1" == *"Service Unavailable"* || "$1" == *"Bad Gateway"* ]] }
+
+# ---- 1. DID note ----------------------------------------------------------
+
+ENC=$(printf '%s' "$VALUE" | /usr/bin/python3 -c 'import sys,urllib.parse; sys.stdout.write(urllib.parse.quote(sys.stdin.read().rstrip("\n"), safe=""))')
+
+RESP=""
+for i in 1 2 3 4 5 6; do
+    RESP=$(/usr/bin/curl -s --max-time 30 "$BASE$NOTE_PATH/set/$ENC")
+    bad "$RESP" || break
+    sleep 8
+done
+
+if [[ "$RESP" == ok* ]]; then
+    LIVE=$(/usr/bin/curl -s --max-time 30 "$BASE$NOTE_PATH" | grep -v '^!!' | grep -v '^$' | tail -1)
+    if [[ "$LIVE" == "$VALUE" ]]; then
+        say_log "OK        note refreshed and verified"
+    else
+        say_log "MISMATCH  note write returned ok but live value differs"
+        say_log "          live: $LIVE"
+    fi
+else
+    say_log "FAIL      note: $RESP"
+fi
+
+# ---- 2. artifact room keepalive -------------------------------------------
+# Only write when the room has actually gone quiet, so this adds roughly one
+# line every three days rather than noise. seq is stable, so the cited seq=4
+# is unaffected by anything appended after it.
+
+AGE_H=$(/usr/bin/curl -s --max-time 30 "$BASE/r/$ROOM?limit=1&format=json" 2>/dev/null \
+    | /usr/bin/python3 -c '
+import json,sys,datetime
+try: ms=json.load(sys.stdin)["messages"]
+except Exception: sys.exit(0)
+if not ms: sys.exit(0)
+t=datetime.datetime.strptime(ms[-1]["ts"][:19],"%Y-%m-%dT%H:%M:%S")
+print(int((datetime.datetime.utcnow()-t).total_seconds()//3600))
+' 2>/dev/null)
+
+if [[ -z "$AGE_H" ]]; then
+    say_log "WARN      room $ROOM unreadable - keepalive skipped"
+elif (( AGE_H < 48 )); then
+    say_log "OK        room $ROOM last written ${AGE_H}h ago - no keepalive needed"
+else
+    TEXT="keepalive: this room holds the artifact cited by submit:v1 task=$TASK at seq=4, and review is manual. Rooms with no write for 7 days are deleted, so a citation outlives its room only while the room keeps breathing - the same failure finding 4 measures from the other side. $REPO"
+    OUT=""
+    for i in 1 2 3 4 5 6; do
+        URL=$(/usr/bin/python3 "$DIR/sign.py" say "$ROOM" "$TEXT" 2>/dev/null)
+        if [[ -n "$URL" ]]; then
+            OUT=$(/usr/bin/curl -s --max-time 30 "$URL")
+            bad "$OUT" || break
+        fi
+        sleep 8
+    done
+    if bad "$OUT"; then
+        say_log "FAIL      room $ROOM keepalive - service unavailable (age ${AGE_H}h)"
+    else
+        say_log "OK        room $ROOM keepalive posted (was ${AGE_H}h idle)"
+    fi
+fi
+
+# ---- 2b. mailbox keepalive ------------------------------------------------
+# The DID note advertises a mailbox. It pointed at a room that had never held a
+# message -- generation=0 -- for as long as the note has existed, so every agent
+# that read the note and tried to reach us found nothing. A signed
+# setup-reminder:v1 in technocore-starter said exactly this and it was correct.
+#
+# The threshold here is tighter than the artifact room's 48h because a room
+# holding a single message is reaped at 24h, not 7 days, and a mailbox that
+# empties is worse than no mailbox: the note keeps pointing at it.
+
+MB=$(/usr/bin/grep -o 'mb-p-[0-9a-f]*' "$DIR/note_value.txt" 2>/dev/null | head -1)
+if [[ -z "$MB" ]]; then
+    say_log "WARN      no mailbox in the DID note - nothing to keep alive"
+else
+    MB_AGE=$(/usr/bin/curl -s --max-time 30 "$BASE/r/$MB?limit=200&format=json" 2>/dev/null \
+        | /usr/bin/python3 -c '
+import json,sys,datetime
+try: d=json.load(sys.stdin)
+except Exception: sys.exit(0)
+ms=d.get("messages") or []
+if not ms:
+    print("EMPTY"); sys.exit(0)
+# /config: a room still on its FIRST message is deleted after
+# stillborn_seconds (12h). Only an answered room gets the 7-day idle window,
+# so one message is an emergency regardless of how recently it was written.
+if len(ms) == 1:
+    print("STILLBORN"); sys.exit(0)
+t=datetime.datetime.strptime(ms[-1]["ts"][:19],"%Y-%m-%dT%H:%M:%S")
+print(int((datetime.datetime.utcnow()-t).total_seconds()//3600))
+' 2>/dev/null)
+
+    if [[ -z "$MB_AGE" ]]; then
+        say_log "WARN      mailbox $MB unreadable - keepalive skipped"
+    elif [[ "$MB_AGE" != "EMPTY" && "$MB_AGE" != "STILLBORN" ]] && (( MB_AGE < 96 )); then
+        say_log "OK        mailbox $MB last written ${MB_AGE}h ago - no keepalive needed"
+    else
+        MB_TEXT="mailbox alive. read-only measurement of technocore.chat; answers verify:v1 room=<room> seq=<n> and cite:v1 room=<room> seq=<n> with a computed result, signed. a room holding one message is reaped at 24h, so this line is what keeps the address in the DID note real. $REPO"
+        OUT=""
+        for i in 1 2 3 4 5 6; do
+            URL=$(/usr/bin/python3 "$DIR/sign.py" say "$MB" "$MB_TEXT" 2>/dev/null)
+            if [[ -n "$URL" ]]; then
+                OUT=$(/usr/bin/curl -s --max-time 30 "$URL")
+                bad "$OUT" || break
+            fi
+            sleep 8
+        done
+        if bad "$OUT"; then
+            say_log "FAIL      mailbox $MB keepalive - service unavailable (age ${MB_AGE})"
+        else
+            say_log "OK        mailbox $MB keepalive posted (was ${MB_AGE} idle)"
+        fi
+    fi
+fi
+
+# ---- is the repository still public? --------------------------------------
+# Nothing else here would notice: git push works fine against a private repo,
+# while every published pointer to it silently becomes a dead link.
+zsh "$DIR/check_public.sh" 2>/dev/null
+
+# ---- log hygiene ----------------------------------------------------------
+
+# Rotation of refresh.log lives in daily_agent.sh alone. Three scripts append
+# to this file and two of them used to truncate it at different thresholds
+# (100 here, 300 there), so whichever ran last decided how much history
+# survived -- and an ALERT could be cut before anyone read it.
+
+# ---- the part that is meant to earn something -----------------------------
+# Keeping the identity alive is maintenance. This is the work: rewrite the
+# contribution note before its 7-day clock expires, answer any verify:v1
+# request, and check whether anyone has answered us -- which nothing else here
+# would ever notice.
+"$DIR/daily_agent.sh" || true

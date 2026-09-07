@@ -6,3 +6,4 @@ mailbox.txt
 *.log
 data/launchd.*
 data/.last-publish
+tools/tclk/.tclk/

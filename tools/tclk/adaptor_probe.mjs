@@ -10,13 +10,44 @@
 // Read-only, offline, no network, no writes anywhere.
 
 import { randomBytes } from "node:crypto";
-import {
-  preSign, adapt, extractWitness, verifyPreSignature, verifySignature, getPublicKey,
-} from "./tk/tclk-main/dist/adaptor.js";
-import {
-  generatePointLock, pointLockFromWitness, verifyPointWitness, isValidPointStatement,
-  SECP256K1_N,
-} from "./tk/tclk-main/dist/points.js";
+import { execFileSync } from "node:child_process";
+import { existsSync, mkdirSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+// The subject of this probe is somebody else's library, so it is not vendored
+// here. It was also not bootstrapped here, which meant this file imported a
+// tree that existed only on the author's machine: `node tools/tclk/adaptor_probe.mjs`
+// was published as reproducible and did not run from a clone. It does now --
+// first run fetches and builds tclk into an ignored directory beside this file.
+const HERE = dirname(fileURLToPath(import.meta.url));
+const VENDOR = join(HERE, ".tclk");
+const DIST = join(VENDOR, "tclk-main", "dist");
+
+function bootstrap() {
+  if (existsSync(join(DIST, "adaptor.js"))) return;
+  console.log("tclk not built here yet; fetching and building it once...");
+  mkdirSync(VENDOR, { recursive: true });
+  const run = (cmd, args, cwd) =>
+    execFileSync(cmd, args, { cwd, stdio: "inherit", timeout: 600000 });
+  run("bash", ["-c",
+    "curl -sSL https://github.com/flop-labs/tclk/archive/refs/heads/main.tar.gz | tar xz"],
+    VENDOR);
+  const root = join(VENDOR, "tclk-main");
+  run("npm", ["install", "--silent", "--no-audit", "--no-fund"], root);
+  run("npx", ["tsc", "-p", "tsconfig.json"], root);
+  if (!existsSync(join(DIST, "adaptor.js"))) {
+    throw new Error("build produced no dist/adaptor.js");
+  }
+  console.log("built.\n");
+}
+
+bootstrap();
+
+const { preSign, adapt, extractWitness, verifyPreSignature, verifySignature, getPublicKey } =
+  await import(join(DIST, "adaptor.js"));
+const { generatePointLock, pointLockFromWitness, verifyPointWitness, isValidPointStatement,
+        SECP256K1_N } = await import(join(DIST, "points.js"));
 
 const hex = (b) => "0x" + Buffer.from(b).toString("hex");
 const results = [];

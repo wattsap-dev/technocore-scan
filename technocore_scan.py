@@ -375,10 +375,23 @@ def cmd_census(args):
     print("shards sampled  : %d of 256" % len(counts))
     print("per shard       : mean %.0f  sd %.0f  min %d  max %d"
           % (mean, sd, min(counts), max(counts)))
+    # mean +/- 2*sd is a prediction interval for ONE shard, scaled up -- it
+    # answers "how big might a single shard be", not "how well is the total
+    # pinned down". The estimate is a mean over `len(counts)` shards, so the
+    # right spread is the standard error, sd/sqrt(n). The wrong statistic was
+    # published here for a week and read about 4x too wide.
+    n = len(counts)
+    se = sd / (n ** 0.5)
     print("published DID notes (estimate) : %s" % format(int(mean * 256), ","))
-    print("  95%% interval  : %s .. %s"
+    print("  95%% CI        : %s .. %s   (mean +/- 1.96*sd/sqrt(%d))"
+          % (format(int((mean - 1.96 * se) * 256), ","),
+             format(int((mean + 1.96 * se) * 256), ","), n))
+    print("  one shard spans: %s .. %s   (mean +/- 2*sd -- what this used to print)"
           % (format(int((mean - 2 * sd) * 256), ","),
              format(int((mean + 2 * sd) * 256), ",")))
+    print("# Sampling is uniform over shards, so this estimates a DIFFUSE")
+    print("# population well and under-reports a CONCENTRATED one: a fleet of")
+    print("# N notes spreads to N/256 per shard and a small sample misses it.")
 
     try:
         for line in get("/rooms").splitlines():
@@ -396,7 +409,11 @@ def _parse_ts(s):
     return datetime.strptime(s[:26].ljust(26, "0"), "%Y-%m-%dT%H:%M:%S.%f")
 
 def cmd_sweep(args):
-    """Measure how much history one read page covers, for every room.
+    """Measure how much history one read page covers, per room.
+
+    SCOPE: "every room" was wrong and is now stated. `/rooms` returns a page of
+    50 (200 with ?limit) out of tens of thousands, newest first, so this is a
+    recency-biased sample of rooms as well as a page-sized sample of each one.
 
     One GET per room. IMPORTANT: this measures the READ PAGE, not the room's
     memory. An earlier version claimed the `?limit=200` window bound readable
@@ -453,6 +470,8 @@ def cmd_sweep(args):
 
     ring = getattr(args, "ring", False)
     print("# span covered by ONE read page (%d messages max), per room." % READ_WINDOW_MAX)
+    print("# Rooms come from /rooms, which is a page of the newest rooms, not")
+    print("# the venue -- see the room count the service prints against its total.")
     print("# This is the page size, not the room's memory: /export returns the")
     print("# whole ring, which holds far more. Use --ring to measure that too.")
     hdr = "%-40s %6s %10s %9s" % ("ROOM", "MSGS", "PAGE SPAN", "MSG/S")
@@ -721,6 +740,8 @@ def cmd_tclk(args):
         kinds, rails, assets, locks = (collections.Counter() for _ in range(4))
         signers, amounts, contracts = set(), [], collections.defaultdict(set)
         rejected = collections.Counter()
+        offers_with_rail = collections.Counter()
+        offers_seen = 0
         pt_signers, pt_ids = set(), set()
         n_prefixed = 0
         for m in ms:
@@ -750,6 +771,9 @@ def cmd_tclk(args):
                         o.get("offerId")} - {None}:
                 contracts[cid].add(ty)
             if ty == "offer":
+                offers_seen += 1
+                for r in set(o.get("rails") or []):
+                    offers_with_rail[r] += 1
                 for r in o.get("rails") or []:
                     rails[r] += 1
                 assets[o.get("asset", "?")] += 1
@@ -776,13 +800,22 @@ def cmd_tclk(args):
         if kinds:
             print("  frame types     : %s" % dict(kinds.most_common()))
         if rails:
-            tot = sum(rails.values())
+            # An offer may name several rails, so summing rail tokens and
+            # dividing gives a share of TOKENS, not of offers -- and because
+            # rails-per-offer varies, that denominator moves on its own. This
+            # was printed as "% of offers" for several days and was not.
             print("  rails named     : %s" % dict(rails.most_common()))
-            paper = rails.get("paper", 0)
+            n_off = max(1, offers_seen)
+            print("  offers naming   : %s"
+                  % {r: n for r, n in offers_with_rail.most_common()})
+            paper_offers = offers_with_rail.get("paper", 0)
+            print("                    %.1f%% of the %d offers name `paper`, the rail"
+                  % (100.0 * paper_offers / n_off, offers_seen))
+            print("                    that by the project's own README settles nothing")
+            tot = sum(rails.values())
             if tot:
-                print("                    %.0f%% of offers name `paper`, the rail that by"
-                      % (100.0 * paper / tot))
-                print("                    the project's own README settles nothing")
+                print("                    (as a share of rail tokens instead: %.1f%%)"
+                      % (100.0 * rails.get("paper", 0) / tot))
         if assets:
             print("  asset           : %s" % dict(assets.most_common()))
         if locks:

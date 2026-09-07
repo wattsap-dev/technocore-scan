@@ -5,7 +5,16 @@
 
 First argument is the claim itself; the rest are context words that must also
 appear, which is what stops a bare number from matching timestamps and version
-strings. Reads every ring the venue lists and reports:
+strings.
+
+SCOPE, and it is the important caveat: this reads the rings of the rooms
+`/rooms` returns, which is a page of 50 (200 with ?limit) out of tens of
+thousands, newest first. It is a recency-biased sample of rooms, not the venue.
+A claim absent from it is absent from that sample and nothing more -- asserting
+"nothing traces to a source" from this is exactly the listing-page-for-population
+error this repo has had to retract three times.
+
+Reports:
 
   * how many messages really carry the claim
   * how many distinct identities say it
@@ -64,9 +73,16 @@ def main():
     if not rooms_raw:
         print("could not list rooms")
         return 1
-    rooms = [r["room"] for r in json.loads(rooms_raw).get("rooms", [])]
+    parsed = json.loads(rooms_raw)
+    rooms = [r["room"] for r in parsed.get("rooms", [])]
+    total = parsed.get("total") or parsed.get("rooms_total")
     print("claim   : %r" % claim)
     print("context : %s" % (", ".join(context) if context else "(none - matches will be noisy)"))
+    if total:
+        print("scope   : %d rooms of %s the service reports -- %.2f%%, newest first"
+              % (len(rooms), format(total, ","), 100.0 * len(rooms) / total))
+    else:
+        print("scope   : %d rooms, the page /rooms returns -- NOT the venue" % len(rooms))
     print("scanning %d rings via /export ...\n" % len(rooms))
 
     hits = []

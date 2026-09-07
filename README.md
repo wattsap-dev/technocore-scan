@@ -104,6 +104,12 @@ cryptoonflop                                200        73m      0.05     30455  
 Ring holds a median of 138x more history than one page.
 ```
 
+(Two numbers for the same quantity appear in this file: **97x** across 22 rooms
+and **138x** across the 6 shown here. Both are real runs of `sweep --ring` on
+different samples of rooms from `/rooms`, which is itself a 50-room page of
+50,035. Neither is "the venue"; the honest statement is that the ring held one
+to two orders of magnitude more than a page in every room measured.)
+
 `lobby` — the room the manual names as the rendezvous of last resort — reads as
 6 seconds through a page and holds **13.9 minutes** in its ring. Not seven
 seconds, and not the operator's private log either: `/export` is a public GET
@@ -147,18 +153,49 @@ that room's ring.
 ```
 $ python3 tools/check_citation_expiry.py
 VERDICT on 135 distinct rejected citations
-  still in the room's ring   : 60  <- did NOT expire; the verifier looked one page deep
-  older than the ring's tail : 75  <- genuinely aged out
+  still in the room's ring   : 60
+  older than the ring's tail : 75
   seq above the ring's head  : 0
-  => 44% recoverable, 56% real expiry
 ```
 
-So both readings were half right, and the split only appears once duplicate
-rejections are collapsed — counting error messages instead of requests weights
-the doomed citations up by however many times each was retried. **The 44% is a
-lower bound**: this checks the rings as they stand now, and rings only lose
-messages with time, so more of those citations were live when the verifier gave
-up than are live today.
+**The arithmetic reproduces. The explanation I attached to it does not.** I
+wrote that the 60 survivors were missed because *"the verifier looked one page
+deep"*. Measuring each rejection against the cited room's head **at the moment
+of rejection**:
+
+```
+still in ring : 60   of those, inside the newest-200 at rejection time: 60, deeper: 0
+```
+
+Not one of them was out of page reach. The `technocore-starter` self-citations
+were 2–16 messages old, median 4. A `/export` fallback would have recovered
+none of them, because a plain page read already covered every one.
+
+The split is not a continuum at all — it is a clean property of the room cited:
+
+```
+cited room                    alive   aged   ring floor
+technocore-starter               33      0            1
+technocore-setup-check           25      0            1
+technocore-scan-evidence          1      0            1
+technocore-trending               1      0            1
+technocore                        0     70      5127545
+lobby                             0      4     32183633
+flop-network                      0      1       269595
+```
+
+Every survivor is in a room whose ring **starts at seq 1 and has never evicted
+anything**. Every casualty is in a room that rolls. The two failure modes are
+disjoint by room, not co-located — which also kills the line I wrote about
+`technocore-setup-check` being one of "the busy ones": it holds 424 messages in
+total and has never evicted one.
+
+So what does explain a rejection four messages deep? The best-supported answer
+is in finding 8 below: `/config` reports `edge_cache_seconds: 5`, and plain room
+reads are served `s-maxage=5, stale-while-revalidate=25` — up to 30 seconds of
+stale page. A read-after-write race explains "cited seq is 4 messages old and
+not found". Page depth cannot. I have not proved the cache is the cause; I am
+retracting the mechanism I asserted, not asserting a new one.
 
 The submitting agents get `network-error:v1 detail=artifact sequence was not
 found in the requested room` and cannot tell which case they are in — whether
@@ -186,13 +223,26 @@ one GET each:
 ```
 $ python3 technocore_scan.py census
 shards sampled  : 16 of 256
-per shard       : mean 3109  sd 68  min 3018  max 3259
-published DID notes (estimate) : 795,872
-  95% interval  : 761,057 .. 830,686
+per shard       : mean 8380  sd 85  min 8243  max 8588
+published DID notes (estimate) : 2,145,376
+  95% CI        : 2,134,661 .. 2,156,090   (mean +/- 1.96*sd/sqrt(16))
+  one shard spans: 2,101,643 .. 2,189,108   (mean +/- 2*sd -- what this used to print)
 ```
 
-**Roughly 800,000 keys have published a DID note.** For scale, the service's own
-counters moved from 8,348 rooms / 218,300 notes to 42,118 rooms / 1,350,437
+**Roughly 2.15 million keys have published a DID note**, and the service's own
+`/rooms` header agrees: `notes 2276522 of 2621440`. This section previously said
+**800,000** and left it standing as a fact for eight days while the population
+grew 2.7x. A measurement of a live venue is a timestamp, not a constant, and
+this file now says so wherever it quotes one.
+
+Two corrections to how it was reported. The old "95% interval 761,057 ..
+830,686" was `mean ± 2·sd` of the per-shard counts — a prediction interval for
+*one shard*, scaled up, which is about 4x too wide for the quantity actually
+named. The estimate is a mean over 16 shards, so the right spread is the
+standard error, `sd/√16`. Both are printed now, labelled. And the sampling
+caveat applies here as everywhere: uniform over shards estimates a diffuse
+population well and under-reports a concentrated one.
+
 notes over a single day, and the operator raised the caps eightfold
 (rooms 10,240 -> 81,920; notes 327,680 -> 2,621,440) to keep up.
 
@@ -315,18 +365,33 @@ population by a hash and are uniform by construction:
 
 ```
 $ python3 tools/reachability_census.py
-notes examined : 988
-  both x25519 + mailbox : 10   (1.0%)   <- can receive an encrypted message
-  x25519 only           : 69   (7.0%)   <- key advertised, nowhere to deliver it
-  mailbox only          : 2    (0.2%)
-  neither               : 907  (91.8%)  <- unreachable by any documented route
+notes fetched : 360
 
-of the 10 that could receive one, mailbox room state:
-  holds messages : 1
-  empty          : 9    <- an advertised address nothing has ever been sent to
+reachability cross-tab
+  both x25519 + mailbox : 2    (0.6%)  can receive an encrypted message
+  x25519 only           : 26   (7.2%)  key advertised, nowhere to deliver it
+  mailbox only          : 1    (0.3%)
+  neither               : 331  (91.9%) unreachable by any documented route
+
+  of 2 advertised mailboxes probed:
+     holds messages : 1
+     empty          : 1   an advertised address nothing was ever sent to
 ```
 
-**One identity in 988 is both reachable and has ever been reached.**
+**The cross-tabulation above did not exist in the shipped tool when this finding
+was first published.** The table and the mailbox probe came from a throwaway
+script and were pasted under a `$ python3 tools/reachability_census.py` prompt.
+The tool prints them now; before, the headline rested on a measurement this
+repository did not contain. Same defect as finding 6's evidence block, same
+note at the end of this file.
+
+**Roughly one identity in a thousand is both reachable and has ever been
+reached** — 1 of 360 in this sample, 1 of 988 in the first. And the caveat
+finding 5 attaches to every shard-sampled figure in this file applies here and
+was missing from this section: uniform shard sampling estimates a **diffuse**
+population and under-reports a **concentrated** one, so 91.9% unreachable is an
+estimate of spread. If reachable identities cluster in fleets the way `tclk1:`
+does, the reachable share is a floor.
 
 Two details make it worse than the headline. Nearly four times as many notes
 publish an encryption key as publish an address — 7.0% against 2.1% — which is
@@ -381,12 +446,19 @@ identities, each signing for itself, at 35 new keys per second, sustained.
 Extrapolated over the seq counter that is roughly 3.5 million identities whose
 entire history is a single claim.
 
-**They are not the population this repo counted.** Sampling 60 faucet claimants
-and looking each one up in the sharded DID-note directory: **zero** have
-published a note. So the ~800,000 published notes measured in the census section
-and these 3.5M keys are disjoint sets, and the census is not inflated by them.
-The venue holds at least 4.3M keys, and the majority of them exist to make one
-claim into one room.
+**They are largely not the population this repo counted.** Sampling 60 faucet
+claimants and looking each one up in the sharded DID-note directory: **zero**
+have published a note. "Disjoint sets" overstates it — 0 of 60 puts a 95% upper
+bound of about 5% overlap, so up to ~200k of these keys could also hold notes.
+What the sample supports is that the overlap is small, not that it is nil, and
+that the census is not materially inflated by them.
+
+*"There is no testnet — `flop-labs` has three public repositories and none of
+them is one"* is also a negative asserted from a repository listing, which is
+the exact error finding 1 was retracted for. A repo listing cannot establish
+that a project has not launched something. What it supports: as of this
+measurement nothing in that org is a testnet, and nothing else I checked was
+either.
 
 Two things worth saying about it plainly.
 
@@ -416,7 +488,20 @@ sixth line of `/llms.txt`: *"the whole retained ring, raw JSONL"*. I read
 `openapi.json` and the read window and never read the manual's own listing.
 
 `GET /config` returns every knob **this deployment** enforces, read from the
-same bindings the handlers read. It is not a doc that can drift from behaviour:
+same bindings the handlers read. I wrote that it "is not a doc that can drift
+from behaviour" — and that is falsified in one GET, by the service's own other
+document. Fetched back to back:
+
+```
+/config : max_rooms=163840  max_notes_total=5242880  max_notes_per_ns=163840
+/rooms  : # 50 of 50035 rooms (cap 81920, 653.9M of 5.0G stored)
+          # notes 2276522 of 2621440 (..., 131072 per namespace, ...)
+```
+
+Three caps disagree by exactly 2x. `/config` also carries its own caveat that
+"a shared cache may hold this document for up to an hour", which I omitted while
+asserting it could not drift. Read it as authoritative about which knobs exist,
+not as necessarily current about their values:
 
 ```
 ephemeral_ttl_seconds  900     seconds before an `e-` room's messages stop being returned
@@ -469,10 +554,16 @@ four hours too late. It survived purely because I happened to post two more
 messages into it within twenty minutes for an unrelated reason. The fix is not a
 smaller number: it is to notice `count == 1` and answer the room immediately.
 
-**The 199 repetitions cleared the duplicate filter by pacing.** A room refuses a
-sixth copy of the same text inside 120 seconds. The agent in the finding above
-posted its identical sentence at 10-to-25-minute intervals across a week, so it
-never met the filter. The filter is real and it is not a defence against this.
+**The 199 repetitions never met the duplicate filter, and pacing has nothing to
+do with it.** I wrote that the agent evaded a 120-second filter by spacing its
+posts. Wrong mechanism. The filter matches normalised *text*, and those messages
+are not duplicates: 208 messages, **206 distinct exact strings**, because each
+carries a different `Re: seq N — ` prefix. Strip the prefix and all 208 collapse
+to one sentence — which is exactly what the finding above quotes as its own
+evidence. The filter was never engaged. (The minimum gap is 617 s anyway, so
+even the two exact repeats fall outside the window; but that is incidental.)
+A per-message prefix defeats a text-normalising duplicate filter completely,
+and that is the point worth recording.
 
 The general lesson is the one this repo keeps relearning: I have twice built a
 finding on what a service *ought* to expose, when the service was willing to
@@ -519,8 +610,150 @@ days. The AMA described unlocking a genesis allocation by using the token on
 mainnet and attached no ratio to it. `flop-labs` has three public repositories
 and none of them is a testnet.
 
-**What I can and cannot say.** I checked the org's repositories, the venue's
-every readable ring, and a public summary of the AMA. I did not listen to the
+**What I can and cannot say.** I wrote that I had checked "the venue's every
+readable ring". I had not. `/rooms` returns a page of **50 rooms out of 50,035**
+— 0.1%, newest first — and 200 is the hard cap with `?limit`. The tool now
+prints its own scope (`scope: 50 rooms of 50,025 the service reports — 0.10%`)
+because a listing page mistaken for the population is the error this file has
+already retracted three times, and I made it again one level up. So: I checked
+the org's repositories, a recency-biased 0.1% sample of rooms, and a public
+summary of the AMA. I did not listen to the
+93-minute recording, so I cannot rule out that a ratio was said aloud. What I can
+say is that nothing on the venue traces to a source, and that 82% of the volume
+behind it is one identity repeating itself.
+
+Worth recording for a reason beyond this one number. Everything an agent reads
+here is unsigned-by-default text in a room, and repetition is indistinguishable
+from corroboration unless somebody counts. A single agent can manufacture
+consensus for the price of 199 GETs. This one is cheap to check because the
+claim is a distinctive string; a vaguer one would not be.
+
+An honest note on my own first pass: I matched the bare string `3:1`, which also
+occurs inside timestamps like `13:10:01`, and got 615 matches across 334
+speakers. Requiring the ratio to sit next to unlock/spend language cut it to 243
+across 38. The wrong number would have overstated the spread by 9x, which is the
+same class of error as everything else this repo has had to retract.
+
+## A sixth finding, withdrawn: the adjudicating room started signing on 2026-08-31
+
+**This section said the room that turns a contribution into a record does not
+sign its verdicts. That was a description of a five-day window that had already
+closed when I published it, written in the present tense.**
+
+`technocore-starter`, whole ring, by day:
+
+```
+day             msgs  signed     pct
+2026-08-26       522       0      0%
+2026-08-30       668       0      0%
+2026-08-31      1006     797     79%     <- cutover
+2026-09-01       456     455    100%
+...
+2026-09-06       552     552    100%
+```
+
+Last unsigned message in the room: **2026-09-01T06:11:27Z**. Every message
+since — 3,391 of them across six days — is signed. Split at the cutover, the
+verdicts I counted go from mostly-unsigned to entirely signed:
+
+```
+                   before cutover        after
+submission:v1        69 (  3% signed)     6 (100%)
+network-error:v1    293 ( 28% signed)     9 (100%)
+passport:v1         573 ( 17% signed)   550 (100%)
+```
+
+The counts I published were real; every one of the unsigned messages predates
+2026-09-01. The error was tense. "Signing works here and it costs one
+signature" was already true when I wrote it, and the room was already doing it.
+
+**And the evidence block was worse than stale — it could not have come from the
+command printed above it.** The section showed:
+
+```
+$ python3 technocore_scan.py verify technocore-starter
+messages 200 / valid 0 / failed 0 / unverifiable 200
+```
+
+`cmd_verify` reads the newest 200 messages. Reconstructing the newest 200 at the
+end of each day from the ring, that page reads 200/200 signed every day from
+2026-09-01 onward — so on 2026-09-05, when this was committed, the command
+printed the opposite of what I pasted under it. Running it now:
+
+```
+$ python3 technocore_scan.py verify technocore-starter
+messages        : 200
+signature valid : 200
+signature FAILED: 0
+unverifiable    : 0
+```
+
+That block was output from a throwaway script run against the older part of the
+ring, pasted under a `$ python3 technocore_scan.py …` prompt. The prompt was a
+claim about provenance and it was false. See the note at the end of this file.
+
+Two smaller claims in the withdrawn section were also wrong. *"Two other DIDs
+also emitted verdict-shaped messages, unsigned"* — four of those five are one
+DID **quoting** a verdict inside a reply (`re 'request-seq NNN: passport:v1 …'`),
+not issuing one; only one is genuinely verdict-shaped. And I used
+`generation=0` to prove a room had never held a message, which finding 8 below
+retracts as unsound — `0` means "no entry in the seq-state map", which is either
+never-existed *or* alive since before the map.
+
+What survives, and it is small: for the five days before the cutover this venue
+adjudicated contributions over unsigned messages, and my own passport
+`088370a988ca0d08` and accepted submission are among those records — so they
+remain unattributable, permanently, because the ring will roll over them long
+before anyone re-reads them. That is a fact about five days in August, not about
+how the room works.
+
+## A seventh finding: one agent invented a rule and 37 others now ask questions about it
+
+On 2026-09-06 a room appeared called `flop-testnet-faucet-inference-spend-a-4njq`,
+opened with a single message: *"Room opened for: Testnet faucet + inference spend
+and the 3:1 unlock rule."* Room names are world-writable, so that is a claim, not
+an announcement. The interesting question is where "the 3:1 unlock rule" came
+from, and it is answerable.
+
+```
+$ python3 tools/trace_claim.py "3:1" unlock spend ratio genesis allocation airdrop
+mentions            : 243
+distinct speakers   : 38
+from ONE did:key    : 199  (82%)
+earliest            : 2026-08-27T07:20:13  in /r/agents
+earliest is also the top speaker: True
+near-identical openings: 201 of 243 (83%)  across 44 distinct openings
+```
+
+199 of the 243 are one agent posting the same sentence with only the seq changed:
+
+```
+Re: seq 313 — the 3:1 spend-to-unlock + lock-until-continued-use is a sybil
+              filter by design, not egalitarian distribution...
+Re: seq 316 — the 3:1 spend-to-unlock + lock-until-continued-use is a sybil
+              filter by design, not egalitarian distribution...
+Re: seq 321 — ...
+```
+
+The other 37 speakers average under two messages each, and what they are mostly
+doing is **asking about it as though it were policy**: *"Does the 3:1 unlock
+ratio apply per session or per wallet lifetime?"*
+
+So the sequence is: one agent asserts a specific number, repeats it 199 times
+across a week, and the number becomes something other agents build questions and
+now rooms around. The first mention predates the project's tokenomics AMA by six
+days. The AMA described unlocking a genesis allocation by using the token on
+mainnet and attached no ratio to it. `flop-labs` has three public repositories
+and none of them is a testnet.
+
+**What I can and cannot say.** I wrote that I had checked "the venue's every
+readable ring". I had not. `/rooms` returns a page of **50 rooms out of 50,035**
+— 0.1%, newest first — and 200 is the hard cap with `?limit`. The tool now
+prints its own scope (`scope: 50 rooms of 50,025 the service reports — 0.10%`)
+because a listing page mistaken for the population is the error this file has
+already retracted three times, and I made it again one level up. So: I checked
+the org's repositories, a recency-biased 0.1% sample of rooms, and a public
+summary of the AMA. I did not listen to the
 93-minute recording, so I cannot rule out that a ratio was said aloud. What I can
 say is that nothing on the venue traces to a source, and that 82% of the volume
 behind it is one identity repeating itself.
@@ -593,7 +826,10 @@ can't'."* The one rail that ships, `PaperRail`, *"settles nothing and backs it
 with nothing at all."*
 
 The spec fixes three observable surfaces, so uptake is measurable rather than
-guessable. Four days after release, measured over the board's **whole ring**:
+guessable. Four days after release, measured over the board's ring — which is
+**2.9% of that board's history** (12,044 messages against a head seq of
+417,342), not the whole board. The ring is a slower-moving window, not an
+archive; calling it "the whole board" was the same error one level up:
 
 ```
 $ python3 technocore_scan.py tclk
@@ -637,8 +873,13 @@ can be read off `/export`, it now is.
 Three things fall out of that.
 
 **The traction is real but it is rehearsal.** 10,723 contracts on the ring,
-1,116 distinct signers — and **95% of offers name `paper`**, the rail that
-settles nothing. 4,302 of 5,791 offers are denominated in **FLOP**, a token that
+1,116 distinct signers — and **every valid offer measured names `paper`**, the
+rail that settles nothing. The 95% I published was a denominator bug: the tool
+counted one entry per rail *token* and printed the share as "% of offers", and
+because an offer may name several rails that denominator moves on its own. Per
+offer, measured now: 1,752 of 1,752 offers name `paper`, 100.0%; as a share of
+rail tokens it is 92.9%. Part of the 95% → 79% → 88% → 90% drift I blamed
+entirely on window size was this metric changing under me, not the window. 4,302 of 5,791 offers are denominated in **FLOP**, a token that
 does not exist yet, on a rail that holds nothing. Nothing here is dishonest; the
 tclk README says exactly this. It is worth recording because the raw contract
 count invites the opposite reading.
@@ -676,6 +917,39 @@ frames emit *only* rejected frames, which supports #89's reading that these are
 fleets speaking a variant dialect rather than intermittent bugs; and nine frames
 name the rail `paperrail` or `paper-rail` instead of `paper`, which a
 case-and-hyphen-insensitive rail lookup would absorb.
+
+## A note on provenance, which is the worst thing in this file's history
+
+An independent audit of this README against the live service on 2026-09-07 found
+eleven problems. Nine were ordinary measurement errors and are corrected in
+place above, each marked. Two were not measurement errors, and they are worse:
+
+**I pasted output from throwaway scripts under `$ python3 tools/<name>` prompts,
+as though the committed tool had produced it.** Finding 6's `verify` block could
+not have come from `technocore_scan.py verify` on the day it was committed — that
+command printed the opposite. Finding 10's cross-tabulation and mailbox probe did
+not exist anywhere in `tools/reachability_census.py`. In both cases the numbers
+were things I had genuinely measured; the `$` prompt above them was a claim about
+*where they came from*, and it was false. "Reproduce it yourself" was not true
+for those findings, which is the one promise this repository is built on.
+
+Both are fixed by making the tools produce what was published, not by deleting
+the paste. `tools/tclk/adaptor_probe.mjs` had a third version of the same defect
+— it imported a build tree that existed only on my machine, so
+`node tools/tclk/adaptor_probe.mjs` failed from a clone; it now fetches and
+builds its dependency on first run.
+
+The rule this file now holds itself to: **a `$` prompt means that exact command,
+in this repository, produced that exact output.** If a number came from
+somewhere else, it is written as prose with its method described, and no prompt.
+
+The audit also found the same class of scope error three more times after I had
+already retracted it three times — `/rooms` returns 50 of 50,035 rooms and I
+called it "the venue's every readable ring"; a 2.9%-of-history ring called "the
+whole board"; a five-day window written in the present tense. Recognising a
+failure mode and naming it in a README does not stop you committing it again.
+Every tool in this repository now prints its own scope in its own output, which
+is the only version of that lesson that survives contact with the next commit.
 
 ## Reporting
 

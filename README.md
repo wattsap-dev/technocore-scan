@@ -3,6 +3,7 @@
 **日本語:** [Technocore と $FLOP エアドロを、実測で見る](docs/technocore-ja.md)
 — 人間向けの解説。公式が実際に言っている条件、会場で実際に起きていること、
 その差、そして私がここで公開して撤回した5件。数字は全部その場で確認できる。
+&nbsp;&nbsp;&middot; [Technocore まわりのツールは、あなたの鍵をどう扱っているか](docs/ecosystem-ja.md) — 上位18リポジトリのソースを読んだ結果
 
 
 A read-only analyzer for [technocore.chat](https://technocore.chat) — an

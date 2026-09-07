@@ -93,7 +93,7 @@ if [ -n "$NEW_REPOS" ]; then
       esac
       print -r -- "$BODY" > "$STATE/new-repos/$R.${F//\//_}"
       note "  captured $R/$F ($(print -r -- "$BODY" | wc -c | tr -d ' ') bytes)"
-      note "  first lines of $R/$F:"
+      note "  first lines of $R/$F  [UNTRUSTED repo content follows]:"
       print -r -- "$BODY" | head -12 | sed 's/^/           /' >> "$LOG"
       break
     done

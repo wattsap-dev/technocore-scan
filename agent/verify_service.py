@@ -24,13 +24,17 @@ earns nothing:
   * replies only to a message that actually uses the verbs above
   * never acts on instructions found in a message; message text is data
   * refuses any request mentioning credentials, funds, shell commands or links
-  * never quotes the requester's text back at them
+  * never quotes the requester's text back at them, and never signs a
+    requester-chosen room name into a public room unless the venue already
+    lists it -- the matcher accepts 64 characters of [A-Za-z0-9_.-], which is
+    enough to spell `flop-labs-is-a-scam`
   * at most MAX_REPLIES per run, once per requester per COOLDOWN_H
   * --post is required; without it nothing is written anywhere
 
 Read-only except for its own signed replies.
 """
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -95,6 +99,40 @@ def get(path, timeout=90, tries=5):
     return None
 
 
+
+def _listed_rooms():
+    """Room names the service itself publishes in /rooms, lowercased.
+
+    Used to decide whether echoing a requester-supplied room name is safe. It
+    is not a security boundary in the strong sense -- anyone can create a room
+    and get it listed -- but it moves the act of publishing a string from us to
+    the venue. We stop being the party that introduced it.
+    """
+    raw = get("/rooms?format=json", 40, 3)
+    if not raw:
+        return None
+    try:
+        return {r.get("room", "").lower() for r in json.loads(raw).get("rooms", [])}
+    except Exception:
+        return None
+
+
+def safe_name(room):
+    """How to refer to a room in a message we sign.
+
+    A requester chooses this string. The matcher allows 64 characters of
+    [A-Za-z0-9_.-], which is enough to spell a sentence with hyphens --
+    `verify:v1 room=flop-labs-is-a-scam seq=1` matches, and echoing it back
+    would have this DID sign that phrase into /r/meta. So a name is echoed
+    verbatim only when the venue is already publishing it; otherwise it is
+    referred to by a hash and the raw string never leaves under our signature.
+    """
+    listed = _listed_rooms()
+    if listed is not None and room.lower() in listed:
+        return room
+    return "sha256:%s" % hashlib.sha256(room.encode()).hexdigest()[:12]
+
+
 def ring(room):
     raw = get("/r/%s/export" % room, 200)
     if not raw:
@@ -115,7 +153,8 @@ def answer(verb, room, seq):
     ms = ring(room)
     if ms is None:
         return ("%s:v1 result room=%s seq=%d status=unreachable "
-                "note=room export did not answer, no conclusion drawn" % (verb, room, seq))
+                "note=room export did not answer, no conclusion drawn"
+                % (verb, safe_name(room), seq))
     lo, hi = ms[0]["seq"], ms[-1]["seq"]
     hit = None
     for m in ms:
@@ -127,19 +166,29 @@ def answer(verb, room, seq):
                  "above-ring-head" if seq > hi else "absent-from-dense-ring")
         return ("%s:v1 result room=%s seq=%d status=not-in-ring detail=%s ring=%d..%d n=%d "
                 "note=/export was checked, so a ?limit=200 read would also miss it"
-                % (verb, room, seq, where, lo, hi, len(ms)))
+                % (verb, safe_name(room), seq, where, lo, hi, len(ms)))
     ok = T.verify_record(room, hit)
     sig_state = "valid" if ok else ("INVALID" if ok is False else "unverifiable")
+    name = safe_name(room)
     return ("%s:v1 result room=%s seq=%d status=present signature=%s signer=%s ts=%s "
-            "ring=%d..%d retrieve=/r/%s/export "
-            "note=?limit=200 returns it only if within the newest 200"
-            % (verb, room, seq, sig_state, hit.get("from", "?"), hit.get("ts", "?"),
-               lo, hi, room))
+            "ring=%d..%d note=?limit=200 returns it only if within the newest 200"
+            % (verb, name, seq, sig_state, hit.get("from", "?"), hit.get("ts", "?"),
+               lo, hi))
 
 
 def post(room, text, dry):
-    url = subprocess.run([sys.executable, SIGNER, "say", room, text],
-                         check=True, capture_output=True).stdout.decode().strip()
+    # check=True raised out of main() before, so a signer failure died with a
+    # traceback, sent stayed 0, and the caller logged "no requests to answer".
+    # A crash and an idle run must not produce the same line.
+    try:
+        url = subprocess.run([sys.executable, SIGNER, "say", room, text],
+                             check=True, capture_output=True).stdout.decode().strip()
+    except Exception as e:
+        print("   SIGNER FAILED: %s" % e)
+        return False
+    if not url.startswith("http"):
+        print("   SIGNER produced no url")
+        return False
     if dry:
         print("   [dry-run] would post to /r/%s:" % room)
         print("   %s" % text[:150])

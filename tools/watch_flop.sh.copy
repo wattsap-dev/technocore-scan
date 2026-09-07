@@ -24,6 +24,10 @@ DIR="${0:A:h}"
 STATE="$DIR/flop-watch"
 LOG="$STATE/watch.log"
 MIN_BYTES=500
+# Name ourselves. The GitHub watcher already does; this one was sending a
+# desktop-Safari string to the site of a project we have applied to, which is
+# a thing that reads badly in their logs and buys nothing.
+UA="technocore-scan-watch (+https://github.com/wattsap-dev/technocore-scan)"
 MARKER="flop"
 
 mkdir -p "$STATE"
@@ -33,6 +37,12 @@ mkdir -p "$STATE"
 # outage -- and a site being down is precisely when the other surface matters.
 # GitHub is where this project actually ships (tclk, 2026-09-01).
 "$DIR/watch_flop_github.sh" || true
+
+# Replies arrive on GitHub, not in rooms. A comment on #738 landed at 19:21 and
+# the daily job would not have looked for up to 24h; a manual sweep found it
+# first. Hourly is cheap -- four `gh api` calls -- and it is the only channel
+# that has actually produced answers.
+"$DIR/check_gh_threads.sh" || true
 
 ts() { date "+%Y-%m-%d %H:%M" }
 note() { print "$(ts)  $1" >> "$LOG" }
@@ -57,9 +67,9 @@ sys.stdout.write(t+"\n"+"\n".join(links)+"\n")
 # fetch_front <outfile> -> 0 on a reply that is plausibly the real page
 fetch_front() {
     local out="$1" host
-    for i in 1 2 3 4 5; do
-        for host in www.flop.finance flop.finance; do
-            if /usr/bin/curl -s --max-time 25 -A "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)" \
+    for i in 1 2; do
+        for host in flop.finance www.flop.finance; do
+            if /usr/bin/curl -s --max-time 25 -A "$UA" \
                  "https://$host/" 2>/dev/null | extract > "$out" 2>/dev/null; then
                 if [[ -s "$out" ]] \
                    && (( $(wc -c < "$out") >= MIN_BYTES )) \
@@ -113,6 +123,47 @@ else
     touch "$DOWN"
     note "flop.finance unreachable (5 attempts, both hosts) - no baseline touched"
 fi
+
+# ---- 1b. the pages that actually carry the mechanics -----------------------
+# The front page is a landing page and barely moves. On 2026-09-07 Arthur Hayes
+# posted a four-post thread pointing at flop.finance, and every substantive
+# document -- the yellow paper, the agent page stating the 3:1 unlock rule, the
+# verification design, the revenue model -- lives under /intro/. Watching only
+# the front page reported "unchanged" through all of it.
+#
+# Captured on change, not merely flagged: the same reason the GitHub watcher
+# grabs a new repo's README. A notification that says "something moved" costs a
+# round trip before anyone can read what moved.
+
+INTRO="$STATE/intro-pages"
+mkdir -p "$INTRO"
+for PAGE in intro intro/agent intro/miner intro/validator intro/verification \
+            intro/revenue intro/yellowpaper teaser apply/kol apply/miner apply/validator; do
+    SAFE="${PAGE//\//_}"
+    BODY=$(/usr/bin/curl -sSL --max-time 40 \
+        -A "$UA" \
+        "https://flop.finance/$PAGE/" 2>/dev/null \
+        | /usr/bin/python3 -c '
+import html, re, sys
+s = sys.stdin.read()
+s = re.sub(r"<script.*?</script>", "", s, flags=re.S)
+s = re.sub(r"<style.*?</style>", "", s, flags=re.S)
+s = re.sub(r"<!--.*?-->", "", s, flags=re.S)
+print(" ".join(html.unescape(re.sub(r"<[^>]+>", " ", s)).split()))
+' 2>/dev/null)
+    # An empty or tiny body is an outage, never a new baseline.
+    [[ -n "$BODY" ]] && (( ${#BODY} >= 400 )) || continue
+    OLD="$INTRO/$SAFE.txt"
+    if [[ ! -f "$OLD" ]]; then
+        print -r -- "$BODY" > "$OLD"
+        note "flop.finance/$PAGE baseline captured (${#BODY} chars)"
+    elif ! print -r -- "$BODY" | /usr/bin/diff -q - "$OLD" >/dev/null 2>&1; then
+        note "CHANGED flop.finance/$PAGE (${#BODY} chars) - first 200 of the diff:"
+        print -r -- "$BODY" | /usr/bin/diff "$OLD" - | head -8 | sed 's/^/           /' >> "$LOG"
+        print -r -- "$BODY" > "$OLD"
+        alert "flop.finance/$PAGE changed"
+    fi
+done
 
 # ---- 2. new rooms that look like a testnet --------------------------------
 

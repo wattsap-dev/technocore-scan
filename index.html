@@ -1,0 +1,122 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>technocore-scan</title>
+<meta name="description" content="Read-only measurement of technocore.chat, published with its corrections.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@600;700&family=Source+Serif+4:opsz,wght@8..60,400&display=swap">
+<style>
+  :root{
+    --ink:#0A0F14; --raise:#111A23; --line:#1E2B36;
+    --paper:#E4EDF4; --muted:#7A8FA0; --dim:#4C5F6E;
+    --signal:#FFAE1A; --trace:#57CBDA;
+    --sans:"IBM Plex Sans Condensed",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+    --serif:"Source Serif 4",Georgia,"Times New Roman",serif;
+  }
+  *{box-sizing:border-box}
+  body{background:var(--ink);color:var(--paper);font-family:var(--serif);
+       margin:0;line-height:1.65;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding:0 24px 88px}
+  .kicker{font-family:var(--mono);font-size:11px;letter-spacing:.18em;
+          text-transform:uppercase;color:var(--muted);margin:56px 0 18px}
+  h1{font-family:var(--sans);font-weight:700;font-size:clamp(2.1rem,6vw,3.4rem);
+     line-height:1.02;letter-spacing:-.02em;margin:0 0 18px;text-wrap:balance}
+  h1 em{font-style:normal;color:var(--signal)}
+  .dek{font-size:1.1rem;color:#BCCCD8;margin:0 0 8px;max-width:62ch}
+  .dek code{font-family:var(--mono);font-size:.85em;color:var(--trace)}
+  h2{font-family:var(--sans);font-weight:600;font-size:1.32rem;letter-spacing:-.01em;
+     margin:52px 0 4px}
+  p{max-width:64ch;margin:0 0 14px}
+  a{color:var(--trace);text-decoration:none;border-bottom:1px solid #24505a}
+  a:hover{border-bottom-color:var(--trace)}
+  a:focus-visible{outline:2px solid var(--signal);outline-offset:3px}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(232px,1fr));
+         gap:2px;background:var(--line);border:1px solid var(--line);margin:26px 0 0}
+  .card{background:var(--raise);padding:20px 19px 18px;display:flex;flex-direction:column;gap:8px}
+  .card .t{font-family:var(--sans);font-weight:600;font-size:1.04rem}
+  .card .d{font-size:.9rem;color:var(--muted);flex:1}
+  .card a{font-family:var(--mono);font-size:.8rem}
+  .figs{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+        gap:2px;background:var(--line);border:1px solid var(--line);margin:22px 0 0}
+  .fig{background:var(--ink);padding:16px 16px 14px}
+  .fig .n{font-family:var(--sans);font-weight:700;font-size:1.75rem;line-height:1;
+          letter-spacing:-.02em;font-variant-numeric:tabular-nums;display:block}
+  .fig .n.a{color:var(--signal)} .fig .n.c{color:var(--trace)}
+  .fig .k{font-family:var(--mono);font-size:10px;line-height:1.55;letter-spacing:.05em;
+          text-transform:uppercase;color:var(--muted);display:block;margin-top:8px}
+  .note{font-family:var(--mono);font-size:12px;line-height:1.85;color:var(--muted);
+        border-left:2px solid var(--signal);padding:2px 0 2px 16px;margin:22px 0;max-width:70ch}
+  footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--line);
+         font-family:var(--mono);font-size:11.5px;color:var(--dim);line-height:1.9}
+</style>
+
+<div class="wrap">
+  <p class="kicker">technocore-scan &middot; read-only measurement</p>
+
+  <h1>Measuring a venue<br>built for <em>agents</em></h1>
+
+  <p class="dek"><a href="https://technocore.chat">technocore.chat</a> is chat and
+  notes for AI agents where every operation, writes included, is a plain
+  <code>GET</code>. No auth, no account, no SDK. That makes it unusually easy to
+  measure from outside — and unusually easy to measure wrongly.</p>
+
+  <p class="dek">This is what two weeks of measuring it found, including the
+  five findings that were published here and then withdrawn.</p>
+
+  <div class="figs">
+    <div class="fig"><span class="n">5.9M</span><span class="k">signed claims against<br>a faucet that does not exist</span></div>
+    <div class="fig"><span class="n c">97&times;</span><span class="k">more history in a room's ring<br>than one read page shows</span></div>
+    <div class="fig"><span class="n a">91.8%</span><span class="k">of published identities<br>cannot be reached at all</span></div>
+    <div class="fig"><span class="n">5</span><span class="k">findings published here<br>and withdrawn</span></div>
+  </div>
+
+  <h2>Look at it</h2>
+  <div class="cards">
+    <div class="card">
+      <span class="t">Ring scan</span>
+      <span class="d">330,874 messages across 14 rooms, drawn from whole rings
+      rather than the 200-message read page. Each mark is one signed message,
+      placed by arrival order — a diagonal is a room nobody stays in.</span>
+      <a href="viz/ring-scan.html">viz/ring-scan.html &rarr;</a>
+    </div>
+    <div class="card">
+      <span class="t">Telemetry readout</span>
+      <span class="d">The earlier page, kept with its correction marked on it:
+      it led with a number that was wrong by a factor of 97, and says so.</span>
+      <a href="viz/index.html">viz/index.html &rarr;</a>
+    </div>
+    <div class="card">
+      <span class="t">日本語の解説</span>
+      <span class="d">公式が実際に言っているエアドロの条件、会場で実際に
+      起きていること、その差、そして撤回した5件。数字は全部その場で確認できる。</span>
+      <a href="https://github.com/wattsap-dev/technocore-scan/blob/main/docs/technocore-ja.md">docs/technocore-ja.md &rarr;</a>
+    </div>
+    <div class="card">
+      <span class="t">The tool and every finding</span>
+      <span class="d">Python standard library and the openssl binary. No SDK, no
+      key, no account, and it writes nothing to the service.</span>
+      <a href="https://github.com/wattsap-dev/technocore-scan">github.com/wattsap-dev/technocore-scan &rarr;</a>
+    </div>
+  </div>
+
+  <p class="note"># Every figure here is a timestamp, not a constant. This venue<br>
+  # moves fast enough that the note population fell by 290,000 in one<br>
+  # afternoon. Re-run the commands rather than trusting the numbers.</p>
+
+  <h2>Why the retractions are on the front page</h2>
+  <p>Because the alternative is leaving bad numbers in circulation with a name
+  on them. Each one is in the repository with the commit that corrected it: a
+  read page described as a room's memory, a documentation file described as a
+  service's behaviour, a listing page described as a population, a five-day
+  window written in the present tense, and a specification called a rumour
+  because the site publishing it was down.</p>
+
+  <p>They share one failure. <strong>I measured the surfaces that answered and
+  described the ones that did not.</strong></p>
+
+  <footer>
+    Read-only against a live service. Nothing here writes to it except an
+    optional signing subcommand, which prints a URL for you to inspect first.<br>
+    <a href="https://github.com/wattsap-dev/technocore-scan">Source, findings and corrections</a>
+  </footer>
+</div>

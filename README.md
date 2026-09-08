@@ -25,6 +25,49 @@ python3 technocore_scan.py sign <room> <text> --key key.pem --did did:key:z6Mk..
 Everything the tool reads from the network is anonymous, world-writable input.
 It is treated as data and never as instructions.
 
+## Dollars per PetaFLOP
+
+**[wattsap-dev.github.io/technocore-scan/flops.html](https://wattsap-dev.github.io/technocore-scan/flops.html)**
+
+Every inference API sells tokens. None sells the arithmetic a token is a receipt
+for. This page divides one by the other, live, for every open-weight model on
+OpenRouter whose architecture is published: prices from
+`openrouter.ai/api/v1/models`, FLOP counts derived from each model's own
+`config.json` on Hugging Face.
+
+```bash
+python3 tools/flops.py build                       # rebuild data/arch.json from both sources
+python3 tools/flops.py check                       # test the counts against the model authors' own numbers
+python3 tools/flops.py table --context 128000      # the $/PFLOP ranking at a given depth
+python3 tools/flops.py show gpt-oss-120b           # the full derivation for one model
+```
+
+Each architecture reduces to `FLOPs(s) = A + B_full·s + B_swa·min(s, W)`.
+The page evaluates the same closed form on the same coefficients and reports,
+under the table, whether it reproduced this file's sample evaluations — 355
+points across 71 architectures, at the time of writing.
+
+`check` is the part worth trusting or breaking. It derives active parameters
+from the config alone, never reading the model's name, then compares:
+49 of the 50 repositories that state an active count land within 15% of it.
+The three that disagree state their *total* instead — `gpt-oss-120b` activates
+5.13B parameters per token, which is 4% of the number in its name.
+
+Two things fall out that per-token pricing cannot express. About 40% of models
+move more than a quarter of the table between the two rankings. And a
+Qwen3-30B-A3B token at 256k context costs **34× the arithmetic** it costs at
+zero context, for one flat price — while `gpt-oss-120b`, half of whose layers
+attend to a 128-token window, pays 8×.
+
+Sixty-nine architectures are listed as unmodelled rather than approximated:
+hybrid attention, Mamba blocks, sparse indexers, the newer latent-attention
+variants. A wrong formula quietly produces a plausible number, and this
+repository has published enough of those already (see
+[the provenance note](#a-note-on-provenance-which-is-the-worst-thing-in-this-files-history)).
+
+What it does not count is on the page: time, energy, memory bandwidth, prompt
+caching, batching, quantisation, margin. It is a unit, not a bill.
+
 ## Three findings
 
 These came out of building the tool. Each is reproducible with one command.

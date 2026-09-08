@@ -1,0 +1,2072 @@
+{
+ "built_by": "tools/flops.py build",
+ "formula": "FLOPs(s) = A + B_full*s + B_swa*min(s,W)",
+ "modelled": {
+  "ByteDance-Seed/UI-TARS-1.5-7B": {
+   "A": 14140571648,
+   "B_full": 401408,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 7070285824,
+   "attention": "GQA (28 heads / 4 kv, head_dim 128)",
+   "check": {
+    "0": 14140571648,
+    "1000": 14541979648,
+    "1000000": 415548571648,
+    "128000": 65520795648,
+    "32000": 26985627648
+   },
+   "config_url": "https://huggingface.co/ByteDance-Seed/UI-TARS-1.5-7B/blob/main/config.json",
+   "full_attn_layers": 28,
+   "hidden_size": 3584,
+   "layers": 28,
+   "lm_head": 1089994752,
+   "mlp": "dense MLP, ff=18944",
+   "model_type": "qwen2_5_vl",
+   "openrouter_ids": [
+    "bytedance/ui-tars-1.5-7b"
+   ],
+   "repo": "ByteDance-Seed/UI-TARS-1.5-7B",
+   "swa_layers": 0,
+   "vocab_size": 152064
+  },
+  "Gryphe/MythoMax-L2-13b": {
+   "A": 25703219200,
+   "B_full": 819200,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 12851609600,
+   "attention": "GQA (40 heads / 40 kv, head_dim 128)",
+   "check": {
+    "0": 25703219200,
+    "1000": 26522419200,
+    "1000000": 844903219200,
+    "128000": 130560819200,
+    "32000": 51917619200
+   },
+   "config_url": "https://huggingface.co/Gryphe/MythoMax-L2-13b/blob/main/config.json",
+   "full_attn_layers": 40,
+   "hidden_size": 5120,
+   "layers": 40,
+   "lm_head": 327680000,
+   "mlp": "dense MLP, ff=13824",
+   "model_type": "llama",
+   "openrouter_ids": [
+    "gryphe/mythomax-l2-13b"
+   ],
+   "repo": "Gryphe/MythoMax-L2-13b",
+   "swa_layers": 0,
+   "vocab_size": 32000
+  },
+  "NousResearch/Hermes-3-Llama-3.1-405B": {
+   "A": 807495794688,
+   "B_full": 8257536,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 403747897344,
+   "attention": "GQA (128 heads / 8 kv, head_dim 128)",
+   "check": {
+    "0": 807495794688,
+    "1000": 815753330688,
+    "1000000": 9065031794688,
+    "128000": 1864460402688,
+    "32000": 1071736946688
+   },
+   "config_url": "https://huggingface.co/NousResearch/Hermes-3-Llama-3.1-405B/blob/main/config.json",
+   "full_attn_layers": 126,
+   "hidden_size": 16384,
+   "layers": 126,
+   "lm_head": 4202692608,
+   "mlp": "dense MLP, ff=53248",
+   "model_type": "llama",
+   "openrouter_ids": [
+    "nousresearch/hermes-3-llama-3.1-405b"
+   ],
+   "repo": "NousResearch/Hermes-3-Llama-3.1-405B",
+   "swa_layers": 0,
+   "vocab_size": 128256
+  },
+  "NousResearch/Hermes-3-Llama-3.1-70B": {
+   "A": 139003428864,
+   "B_full": 2621440,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 69501714432,
+   "attention": "GQA (64 heads / 8 kv, head_dim 128)",
+   "check": {
+    "0": 139003428864,
+    "1000": 141624868864,
+    "1000000": 2760443428864,
+    "128000": 474547748864,
+    "32000": 222889508864
+   },
+   "config_url": "https://huggingface.co/NousResearch/Hermes-3-Llama-3.1-70B/blob/main/config.json",
+   "full_attn_layers": 80,
+   "hidden_size": 8192,
+   "layers": 80,
+   "lm_head": 2101346304,
+   "mlp": "dense MLP, ff=28672",
+   "model_type": "llama",
+   "openrouter_ids": [
+    "nousresearch/hermes-3-llama-3.1-70b"
+   ],
+   "repo": "NousResearch/Hermes-3-Llama-3.1-70B",
+   "swa_layers": 0,
+   "vocab_size": 128256
+  },
+  "NousResearch/Hermes-4-405B": {
+   "A": 807495794688,
+   "B_full": 8257536,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 403747897344,
+   "attention": "GQA (128 heads / 8 kv, head_dim 128)",
+   "check": {
+    "0": 807495794688,
+    "1000": 815753330688,
+    "1000000": 9065031794688,
+    "128000": 1864460402688,
+    "32000": 1071736946688
+   },
+   "config_url": "https://huggingface.co/NousResearch/Hermes-4-405B/blob/main/config.json",
+   "full_attn_layers": 126,
+   "hidden_size": 16384,
+   "layers": 126,
+   "lm_head": 4202692608,
+   "mlp": "dense MLP, ff=53248",
+   "model_type": "llama",
+   "openrouter_ids": [
+    "nousresearch/hermes-4-405b"
+   ],
+   "repo": "NousResearch/Hermes-4-405B",
+   "swa_layers": 0,
+   "vocab_size": 128256
+  },
+  "NousResearch/Hermes-4-70B": {
+   "A": 139003428864,
+   "B_full": 2621440,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 69501714432,
+   "attention": "GQA (64 heads / 8 kv, head_dim 128)",
+   "check": {
+    "0": 139003428864,
+    "1000": 141624868864,
+    "1000000": 2760443428864,
+    "128000": 474547748864,
+    "32000": 222889508864
+   },
+   "config_url": "https://huggingface.co/NousResearch/Hermes-4-70B/blob/main/config.json",
+   "full_attn_layers": 80,
+   "hidden_size": 8192,
+   "layers": 80,
+   "lm_head": 2101346304,
+   "mlp": "dense MLP, ff=28672",
+   "model_type": "llama",
+   "openrouter_ids": [
+    "nousresearch/hermes-4-70b"
+   ],
+   "repo": "NousResearch/Hermes-4-70B",
+   "swa_layers": 0,
+   "vocab_size": 128256
+  },
+  "Qwen/Qwen2.5-72B-Instruct": {
+   "A": 142916714496,
+   "B_full": 2621440,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 71458357248,
+   "attention": "GQA (64 heads / 8 kv, head_dim 128)",
+   "check": {
+    "0": 142916714496,
+    "1000": 145538154496,
+    "1000000": 2764356714496,
+    "128000": 478461034496,
+    "32000": 226802794496
+   },
+   "config_url": "https://huggingface.co/Qwen/Qwen2.5-72B-Instruct/blob/main/config.json",
+   "full_attn_layers": 80,
+   "hidden_size": 8192,
+   "layers": 80,
+   "lm_head": 2491416576,
+   "mlp": "dense MLP, ff=29568",
+   "model_type": "qwen2",
+   "openrouter_ids": [
+    "qwen/qwen-2.5-72b-instruct"
+   ],
+   "repo": "Qwen/Qwen2.5-72B-Instruct",
+   "swa_layers": 0,
+   "vocab_size": 152064
+  },
+  "Qwen/Qwen2.5-7B-Instruct": {
+   "A": 14140571648,
+   "B_full": 401408,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 7070285824,
+   "attention": "GQA (28 heads / 4 kv, head_dim 128)",
+   "check": {
+    "0": 14140571648,
+    "1000": 14541979648,
+    "1000000": 415548571648,
+    "128000": 65520795648,
+    "32000": 26985627648
+   },
+   "config_url": "https://huggingface.co/Qwen/Qwen2.5-7B-Instruct/blob/main/config.json",
+   "full_attn_layers": 28,
+   "hidden_size": 3584,
+   "layers": 28,
+   "lm_head": 1089994752,
+   "mlp": "dense MLP, ff=18944",
+   "model_type": "qwen2",
+   "openrouter_ids": [
+    "qwen/qwen-2.5-7b-instruct"
+   ],
+   "repo": "Qwen/Qwen2.5-7B-Instruct",
+   "swa_layers": 0,
+   "vocab_size": 152064
+  },
+  "Qwen/Qwen2.5-Coder-32B-Instruct": {
+   "A": 63968378880,
+   "B_full": 1310720,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 31984189440,
+   "attention": "GQA (40 heads / 8 kv, head_dim 128)",
+   "check": {
+    "0": 63968378880,
+    "1000": 65279098880,
+    "1000000": 1374688378880,
+    "128000": 231740538880,
+    "32000": 105911418880
+   },
+   "config_url": "https://huggingface.co/Qwen/Qwen2.5-Coder-32B-Instruct/blob/main/config.json",
+   "full_attn_layers": 64,
+   "hidden_size": 5120,
+   "layers": 64,
+   "lm_head": 1557135360,
+   "mlp": "dense MLP, ff=27648",
+   "model_type": "qwen2",
+   "openrouter_ids": [
+    "qwen/qwen-2.5-coder-32b-instruct"
+   ],
+   "repo": "Qwen/Qwen2.5-Coder-32B-Instruct",
+   "swa_layers": 0,
+   "vocab_size": 152064
+  },
+  "Qwen/Qwen2.5-VL-72B-Instruct": {
+   "A": 142916714496,
+   "B_full": 2621440,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 71458357248,
+   "attention": "GQA (64 heads / 8 kv, head_dim 128)",
+   "check": {
+    "0": 142916714496,
+    "1000": 145538154496,
+    "1000000": 2764356714496,
+    "128000": 478461034496,
+    "32000": 226802794496
+   },
+   "config_url": "https://huggingface.co/Qwen/Qwen2.5-VL-72B-Instruct/blob/main/config.json",
+   "full_attn_layers": 80,
+   "hidden_size": 8192,
+   "layers": 80,
+   "lm_head": 2491416576,
+   "mlp": "dense MLP, ff=29568",
+   "model_type": "qwen2_5_vl",
+   "openrouter_ids": [
+    "qwen/qwen2.5-vl-72b-instruct"
+   ],
+   "repo": "Qwen/Qwen2.5-VL-72B-Instruct",
+   "swa_layers": 0,
+   "vocab_size": 152064
+  },
+  "Qwen/Qwen3-14B": {
+   "A": 27979939840,
+   "B_full": 819200,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 13989969920,
+   "attention": "GQA (40 heads / 8 kv, head_dim 128)",
+   "check": {
+    "0": 27979939840,
+    "1000": 28799139840,
+    "1000000": 847179939840,
+    "128000": 132837539840,
+    "32000": 54194339840
+   },
+   "config_url": "https://huggingface.co/Qwen/Qwen3-14B/blob/main/config.json",
+   "full_attn_layers": 40,
+   "hidden_size": 5120,
+   "layers": 40,
+   "lm_head": 1555824640,
+   "mlp": "dense MLP, ff=17408",
+   "model_type": "qwen3",
+   "openrouter_ids": [
+    "qwen/qwen3-14b"
+   ],
+   "repo": "Qwen/Qwen3-14B",
+   "swa_layers": 0,
+   "vocab_size": 151936
+  },
+  "Qwen/Qwen3-235B-A22B": {
+   "A": 43135270912,
+   "B_full": 3080192,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 21567635456,
+   "attention": "GQA (64 heads / 4 kv, head_dim 128)",
+   "check": {
+    "0": 43135270912,
+    "1000": 46215462912,
+    "1000000": 3123327270912,
+    "128000": 437399846912,
+    "32000": 141701414912
+   },
+   "config_url": "https://huggingface.co/Qwen/Qwen3-235B-A22B/blob/main/config.json",
+   "full_attn_layers": 94,
+   "hidden_size": 4096,
+   "layers": 94,
+   "lm_head": 1244659712,
+   "mlp": "94 of 94 layers MoE, 8/128 experts active, expert ff=1536",
+   "model_type": "qwen3_moe",
+   "openrouter_ids": [
+    "qwen/qwen3-235b-a22b"
+   ],
+   "repo": "Qwen/Qwen3-235B-A22B",
+   "swa_layers": 0,
+   "vocab_size": 151936
+  },
+  "Qwen/Qwen3-235B-A22B-Instruct-2507": {
+   "A": 43135270912,
+   "B_full": 3080192,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 21567635456,
+   "attention": "GQA (64 heads / 4 kv, head_dim 128)",
+   "check": {
+    "0": 43135270912,
+    "1000": 46215462912,
+    "1000000": 3123327270912,
+    "128000": 437399846912,
+    "32000": 141701414912
+   },
+   "config_url": "https://huggingface.co/Qwen/Qwen3-235B-A22B-Instruct-2507/blob/main/config.json",
+   "full_attn_layers": 94,
+   "hidden_size": 4096,
+   "layers": 94,
+   "lm_head": 1244659712,
+   "mlp": "94 of 94 layers MoE, 8/128 experts active, expert ff=1536",
+   "model_type": "qwen3_moe",
+   "openrouter_ids": [
+    "qwen/qwen3-235b-a22b-2507"
+   ],
+   "repo": "Qwen/Qwen3-235B-A22B-Instruct-2507",
+   "swa_layers": 0,
+   "vocab_size": 151936
+  },
+  "Qwen/Qwen3-235B-A22B-Thinking-2507": {
+   "A": 43135270912,
+   "B_full": 3080192,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 21567635456,
+   "attention": "GQA (64 heads / 4 kv, head_dim 128)",
+   "check": {
+    "0": 43135270912,
+    "1000": 46215462912,
+    "1000000": 3123327270912,
+    "128000": 437399846912,
+    "32000": 141701414912
+   },
+   "config_url": "https://huggingface.co/Qwen/Qwen3-235B-A22B-Thinking-2507/blob/main/config.json",
+   "full_attn_layers": 94,
+   "hidden_size": 4096,
+   "layers": 94,
+   "lm_head": 1244659712,
+   "mlp": "94 of 94 layers MoE, 8/128 experts active, expert ff=1536",
+   "model_type": "qwen3_moe",
+   "openrouter_ids": [
+    "qwen/qwen3-235b-a22b-thinking-2507"
+   ],
+   "repo": "Qwen/Qwen3-235B-A22B-Thinking-2507",
+   "swa_layers": 0,
+   "vocab_size": 151936
+  },
+  "Qwen/Qwen3-30B-A3B": {
+   "A": 6083313664,
+   "B_full": 786432,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 3041656832,
+   "attention": "GQA (32 heads / 4 kv, head_dim 128)",
+   "check": {
+    "0": 6083313664,
+    "1000": 6869745664,
+    "1000000": 792515313664,
+    "128000": 106746609664,
+    "32000": 31249137664
+   },
+   "config_url": "https://huggingface.co/Qwen/Qwen3-30B-A3B/blob/main/config.json",
+   "full_attn_layers": 48,
+   "hidden_size": 2048,
+   "layers": 48,
+   "lm_head": 622329856,
+   "mlp": "48 of 48 layers MoE, 8/128 experts active, expert ff=768",
+   "model_type": "qwen3_moe",
+   "openrouter_ids": [
+    "qwen/qwen3-30b-a3b"
+   ],
+   "repo": "Qwen/Qwen3-30B-A3B",
+   "swa_layers": 0,
+   "vocab_size": 151936
+  },
+  "Qwen/Qwen3-30B-A3B-Instruct-2507": {
+   "A": 6083313664,
+   "B_full": 786432,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 3041656832,
+   "attention": "GQA (32 heads / 4 kv, head_dim 128)",
+   "check": {
+    "0": 6083313664,
+    "1000": 6869745664,
+    "1000000": 792515313664,
+    "128000": 106746609664,
+    "32000": 31249137664
+   },
+   "config_url": "https://huggingface.co/Qwen/Qwen3-30B-A3B-Instruct-2507/blob/main/config.json",
+   "full_attn_layers": 48,
+   "hidden_size": 2048,
+   "layers": 48,
+   "lm_head": 622329856,
+   "mlp": "48 of 48 layers MoE, 8/128 experts active, expert ff=768",
+   "model_type": "qwen3_moe",
+   "openrouter_ids": [
+    "qwen/qwen3-30b-a3b-instruct-2507"
+   ],
+   "repo": "Qwen/Qwen3-30B-A3B-Instruct-2507",
+   "swa_layers": 0,
+   "vocab_size": 151936
+  },
+  "Qwen/Qwen3-30B-A3B-Thinking-2507": {
+   "A": 6083313664,
+   "B_full": 786432,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 3041656832,
+   "attention": "GQA (32 heads / 4 kv, head_dim 128)",
+   "check": {
+    "0": 6083313664,
+    "1000": 6869745664,
+    "1000000": 792515313664,
+    "128000": 106746609664,
+    "32000": 31249137664
+   },
+   "config_url": "https://huggingface.co/Qwen/Qwen3-30B-A3B-Thinking-2507/blob/main/config.json",
+   "full_attn_layers": 48,
+   "hidden_size": 2048,
+   "layers": 48,
+   "lm_head": 622329856,
+   "mlp": "48 of 48 layers MoE, 8/128 experts active, expert ff=768",
+   "model_type": "qwen3_moe",
+   "openrouter_ids": [
+    "qwen/qwen3-30b-a3b-thinking-2507"
+   ],
+   "repo": "Qwen/Qwen3-30B-A3B-Thinking-2507",
+   "swa_layers": 0,
+   "vocab_size": 151936
+  },
+  "Qwen/Qwen3-32B": {
+   "A": 63967068160,
+   "B_full": 2097152,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 31983534080,
+   "attention": "GQA (64 heads / 8 kv, head_dim 128)",
+   "check": {
+    "0": 63967068160,
+    "1000": 66064220160,
+    "1000000": 2161119068160,
+    "128000": 332402524160,
+    "32000": 131075932160
+   },
+   "config_url": "https://huggingface.co/Qwen/Qwen3-32B/blob/main/config.json",
+   "full_attn_layers": 64,
+   "hidden_size": 5120,
+   "layers": 64,
+   "lm_head": 1555824640,
+   "mlp": "dense MLP, ff=25600",
+   "model_type": "qwen3",
+   "openrouter_ids": [
+    "qwen/qwen3-32b"
+   ],
+   "repo": "Qwen/Qwen3-32B",
+   "swa_layers": 0,
+   "vocab_size": 151936
+  },
+  "Qwen/Qwen3-8B": {
+   "A": 15136194560,
+   "B_full": 589824,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 7568097280,
+   "attention": "GQA (32 heads / 8 kv, head_dim 128)",
+   "check": {
+    "0": 15136194560,
+    "1000": 15726018560,
+    "1000000": 604960194560,
+    "128000": 90633666560,
+    "32000": 34010562560
+   },
+   "config_url": "https://huggingface.co/Qwen/Qwen3-8B/blob/main/config.json",
+   "full_attn_layers": 36,
+   "hidden_size": 4096,
+   "layers": 36,
+   "lm_head": 1244659712,
+   "mlp": "dense MLP, ff=12288",
+   "model_type": "qwen3",
+   "openrouter_ids": [
+    "qwen/qwen3-8b"
+   ],
+   "repo": "Qwen/Qwen3-8B",
+   "swa_layers": 0,
+   "vocab_size": 151936
+  },
+  "Qwen/Qwen3-Coder-30B-A3B-Instruct": {
+   "A": 6083313664,
+   "B_full": 786432,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 3041656832,
+   "attention": "GQA (32 heads / 4 kv, head_dim 128)",
+   "check": {
+    "0": 6083313664,
+    "1000": 6869745664,
+    "1000000": 792515313664,
+    "128000": 106746609664,
+    "32000": 31249137664
+   },
+   "config_url": "https://huggingface.co/Qwen/Qwen3-Coder-30B-A3B-Instruct/blob/main/config.json",
+   "full_attn_layers": 48,
+   "hidden_size": 2048,
+   "layers": 48,
+   "lm_head": 622329856,
+   "mlp": "48 of 48 layers MoE, 8/128 experts active, expert ff=768",
+   "model_type": "qwen3_moe",
+   "openrouter_ids": [
+    "qwen/qwen3-coder-30b-a3b-instruct"
+   ],
+   "repo": "Qwen/Qwen3-Coder-30B-A3B-Instruct",
+   "swa_layers": 0,
+   "vocab_size": 151936
+  },
+  "Qwen/Qwen3-Coder-480B-A35B-Instruct": {
+   "A": 69080973312,
+   "B_full": 3047424,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 34540486656,
+   "attention": "GQA (96 heads / 8 kv, head_dim 128)",
+   "check": {
+    "0": 69080973312,
+    "1000": 72128397312,
+    "1000000": 3116504973312,
+    "128000": 459151245312,
+    "32000": 166598541312
+   },
+   "config_url": "https://huggingface.co/Qwen/Qwen3-Coder-480B-A35B-Instruct/blob/main/config.json",
+   "full_attn_layers": 62,
+   "hidden_size": 6144,
+   "layers": 62,
+   "lm_head": 1866989568,
+   "mlp": "62 of 62 layers MoE, 8/160 experts active, expert ff=2560",
+   "model_type": "qwen3_moe",
+   "openrouter_ids": [
+    "qwen/qwen3-coder"
+   ],
+   "repo": "Qwen/Qwen3-Coder-480B-A35B-Instruct",
+   "swa_layers": 0,
+   "vocab_size": 151936
+  },
+  "Qwen/Qwen3-VL-235B-A22B-Instruct": {
+   "A": 43135270912,
+   "B_full": 3080192,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 21567635456,
+   "attention": "GQA (64 heads / 4 kv, head_dim 128)",
+   "check": {
+    "0": 43135270912,
+    "1000": 46215462912,
+    "1000000": 3123327270912,
+    "128000": 437399846912,
+    "32000": 141701414912
+   },
+   "config_url": "https://huggingface.co/Qwen/Qwen3-VL-235B-A22B-Instruct/blob/main/config.json",
+   "full_attn_layers": 94,
+   "hidden_size": 4096,
+   "layers": 94,
+   "lm_head": 1244659712,
+   "mlp": "94 of 94 layers MoE, 8/128 experts active, expert ff=1536",
+   "model_type": "qwen3_vl_moe_text",
+   "openrouter_ids": [
+    "qwen/qwen3-vl-235b-a22b-instruct"
+   ],
+   "repo": "Qwen/Qwen3-VL-235B-A22B-Instruct",
+   "swa_layers": 0,
+   "vocab_size": 151936
+  },
+  "Qwen/Qwen3-VL-235B-A22B-Thinking": {
+   "A": 43135270912,
+   "B_full": 3080192,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 21567635456,
+   "attention": "GQA (64 heads / 4 kv, head_dim 128)",
+   "check": {
+    "0": 43135270912,
+    "1000": 46215462912,
+    "1000000": 3123327270912,
+    "128000": 437399846912,
+    "32000": 141701414912
+   },
+   "config_url": "https://huggingface.co/Qwen/Qwen3-VL-235B-A22B-Thinking/blob/main/config.json",
+   "full_attn_layers": 94,
+   "hidden_size": 4096,
+   "layers": 94,
+   "lm_head": 1244659712,
+   "mlp": "94 of 94 layers MoE, 8/128 experts active, expert ff=1536",
+   "model_type": "qwen3_vl_moe_text",
+   "openrouter_ids": [
+    "qwen/qwen3-vl-235b-a22b-thinking"
+   ],
+   "repo": "Qwen/Qwen3-VL-235B-A22B-Thinking",
+   "swa_layers": 0,
+   "vocab_size": 151936
+  },
+  "Qwen/Qwen3-VL-30B-A3B-Instruct": {
+   "A": 6083313664,
+   "B_full": 786432,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 3041656832,
+   "attention": "GQA (32 heads / 4 kv, head_dim 128)",
+   "check": {
+    "0": 6083313664,
+    "1000": 6869745664,
+    "1000000": 792515313664,
+    "128000": 106746609664,
+    "32000": 31249137664
+   },
+   "config_url": "https://huggingface.co/Qwen/Qwen3-VL-30B-A3B-Instruct/blob/main/config.json",
+   "full_attn_layers": 48,
+   "hidden_size": 2048,
+   "layers": 48,
+   "lm_head": 622329856,
+   "mlp": "48 of 48 layers MoE, 8/128 experts active, expert ff=768",
+   "model_type": "qwen3_vl_moe_text",
+   "openrouter_ids": [
+    "qwen/qwen3-vl-30b-a3b-instruct"
+   ],
+   "repo": "Qwen/Qwen3-VL-30B-A3B-Instruct",
+   "swa_layers": 0,
+   "vocab_size": 151936
+  },
+  "Qwen/Qwen3-VL-30B-A3B-Thinking": {
+   "A": 6083313664,
+   "B_full": 786432,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 3041656832,
+   "attention": "GQA (32 heads / 4 kv, head_dim 128)",
+   "check": {
+    "0": 6083313664,
+    "1000": 6869745664,
+    "1000000": 792515313664,
+    "128000": 106746609664,
+    "32000": 31249137664
+   },
+   "config_url": "https://huggingface.co/Qwen/Qwen3-VL-30B-A3B-Thinking/blob/main/config.json",
+   "full_attn_layers": 48,
+   "hidden_size": 2048,
+   "layers": 48,
+   "lm_head": 622329856,
+   "mlp": "48 of 48 layers MoE, 8/128 experts active, expert ff=768",
+   "model_type": "qwen3_vl_moe_text",
+   "openrouter_ids": [
+    "qwen/qwen3-vl-30b-a3b-thinking"
+   ],
+   "repo": "Qwen/Qwen3-VL-30B-A3B-Thinking",
+   "swa_layers": 0,
+   "vocab_size": 151936
+  },
+  "Qwen/Qwen3-VL-32B-Instruct": {
+   "A": 63967068160,
+   "B_full": 2097152,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 31983534080,
+   "attention": "GQA (64 heads / 8 kv, head_dim 128)",
+   "check": {
+    "0": 63967068160,
+    "1000": 66064220160,
+    "1000000": 2161119068160,
+    "128000": 332402524160,
+    "32000": 131075932160
+   },
+   "config_url": "https://huggingface.co/Qwen/Qwen3-VL-32B-Instruct/blob/main/config.json",
+   "full_attn_layers": 64,
+   "hidden_size": 5120,
+   "layers": 64,
+   "lm_head": 1555824640,
+   "mlp": "dense MLP, ff=25600",
+   "model_type": "qwen3_vl_text",
+   "openrouter_ids": [
+    "qwen/qwen3-vl-32b-instruct"
+   ],
+   "repo": "Qwen/Qwen3-VL-32B-Instruct",
+   "swa_layers": 0,
+   "vocab_size": 151936
+  },
+  "Qwen/Qwen3-VL-8B-Instruct": {
+   "A": 15136194560,
+   "B_full": 589824,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 7568097280,
+   "attention": "GQA (32 heads / 8 kv, head_dim 128)",
+   "check": {
+    "0": 15136194560,
+    "1000": 15726018560,
+    "1000000": 604960194560,
+    "128000": 90633666560,
+    "32000": 34010562560
+   },
+   "config_url": "https://huggingface.co/Qwen/Qwen3-VL-8B-Instruct/blob/main/config.json",
+   "full_attn_layers": 36,
+   "hidden_size": 4096,
+   "layers": 36,
+   "lm_head": 1244659712,
+   "mlp": "dense MLP, ff=12288",
+   "model_type": "qwen3_vl_text",
+   "openrouter_ids": [
+    "qwen/qwen3-vl-8b-instruct"
+   ],
+   "repo": "Qwen/Qwen3-VL-8B-Instruct",
+   "swa_layers": 0,
+   "vocab_size": 151936
+  },
+  "Qwen/Qwen3-VL-8B-Thinking": {
+   "A": 15136194560,
+   "B_full": 589824,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 7568097280,
+   "attention": "GQA (32 heads / 8 kv, head_dim 128)",
+   "check": {
+    "0": 15136194560,
+    "1000": 15726018560,
+    "1000000": 604960194560,
+    "128000": 90633666560,
+    "32000": 34010562560
+   },
+   "config_url": "https://huggingface.co/Qwen/Qwen3-VL-8B-Thinking/blob/main/config.json",
+   "full_attn_layers": 36,
+   "hidden_size": 4096,
+   "layers": 36,
+   "lm_head": 1244659712,
+   "mlp": "dense MLP, ff=12288",
+   "model_type": "qwen3_vl_text",
+   "openrouter_ids": [
+    "qwen/qwen3-vl-8b-thinking"
+   ],
+   "repo": "Qwen/Qwen3-VL-8B-Thinking",
+   "swa_layers": 0,
+   "vocab_size": 151936
+  },
+  "RekaAI/reka-edge-2603": {
+   "A": 12062818304,
+   "B_full": 524288,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 6031409152,
+   "attention": "GQA (32 heads / 8 kv, head_dim 128)",
+   "check": {
+    "0": 12062818304,
+    "1000": 12587106304,
+    "1000000": 536350818304,
+    "128000": 79171682304,
+    "32000": 28840034304
+   },
+   "config_url": "https://huggingface.co/RekaAI/reka-edge-2603/blob/main/config.json",
+   "full_attn_layers": 32,
+   "hidden_size": 4096,
+   "layers": 32,
+   "lm_head": 822083584,
+   "mlp": "dense MLP, ff=10880",
+   "model_type": "yasa_model",
+   "openrouter_ids": [
+    "rekaai/reka-edge"
+   ],
+   "repo": "RekaAI/reka-edge-2603",
+   "swa_layers": 0,
+   "vocab_size": 100352
+  },
+  "RekaAI/reka-flash-3": {
+   "A": 40576745472,
+   "B_full": 1081344,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 20288372736,
+   "attention": "GQA (64 heads / 8 kv, head_dim 96)",
+   "check": {
+    "0": 40576745472,
+    "1000": 41658089472,
+    "1000000": 1121920745472,
+    "128000": 178988777472,
+    "32000": 75179753472
+   },
+   "config_url": "https://huggingface.co/RekaAI/reka-flash-3/blob/main/config.json",
+   "full_attn_layers": 44,
+   "hidden_size": 6144,
+   "layers": 44,
+   "lm_head": 1233125376,
+   "mlp": "dense MLP, ff=19648",
+   "model_type": "llama",
+   "openrouter_ids": [
+    "rekaai/reka-flash-3"
+   ],
+   "repo": "RekaAI/reka-flash-3",
+   "swa_layers": 0,
+   "vocab_size": 100352
+  },
+  "Sao10K/L3-8B-Lunaris-v1": {
+   "A": 15009316864,
+   "B_full": 524288,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 7504658432,
+   "attention": "GQA (32 heads / 8 kv, head_dim 128)",
+   "check": {
+    "0": 15009316864,
+    "1000": 15533604864,
+    "1000000": 539297316864,
+    "128000": 82118180864,
+    "32000": 31786532864
+   },
+   "config_url": "https://huggingface.co/Sao10K/L3-8B-Lunaris-v1/blob/main/config.json",
+   "full_attn_layers": 32,
+   "hidden_size": 4096,
+   "layers": 32,
+   "lm_head": 1050673152,
+   "mlp": "dense MLP, ff=14336",
+   "model_type": "llama",
+   "openrouter_ids": [
+    "sao10k/l3-lunaris-8b"
+   ],
+   "repo": "Sao10K/L3-8B-Lunaris-v1",
+   "swa_layers": 0,
+   "vocab_size": 128256
+  },
+  "Sao10K/L3.1-70B-Euryale-v2.2": {
+   "A": 139003428864,
+   "B_full": 2621440,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 69501714432,
+   "attention": "GQA (64 heads / 8 kv, head_dim 128)",
+   "check": {
+    "0": 139003428864,
+    "1000": 141624868864,
+    "1000000": 2760443428864,
+    "128000": 474547748864,
+    "32000": 222889508864
+   },
+   "config_url": "https://huggingface.co/Sao10K/L3.1-70B-Euryale-v2.2/blob/main/config.json",
+   "full_attn_layers": 80,
+   "hidden_size": 8192,
+   "layers": 80,
+   "lm_head": 2101346304,
+   "mlp": "dense MLP, ff=28672",
+   "model_type": "llama",
+   "openrouter_ids": [
+    "sao10k/l3.1-euryale-70b"
+   ],
+   "repo": "Sao10K/L3.1-70B-Euryale-v2.2",
+   "swa_layers": 0,
+   "vocab_size": 128256
+  },
+  "Sao10K/L3.3-70B-Euryale-v2.3": {
+   "A": 139003428864,
+   "B_full": 2621440,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 69501714432,
+   "attention": "GQA (64 heads / 8 kv, head_dim 128)",
+   "check": {
+    "0": 139003428864,
+    "1000": 141624868864,
+    "1000000": 2760443428864,
+    "128000": 474547748864,
+    "32000": 222889508864
+   },
+   "config_url": "https://huggingface.co/Sao10K/L3.3-70B-Euryale-v2.3/blob/main/config.json",
+   "full_attn_layers": 80,
+   "hidden_size": 8192,
+   "layers": 80,
+   "lm_head": 2101346304,
+   "mlp": "dense MLP, ff=28672",
+   "model_type": "llama",
+   "openrouter_ids": [
+    "sao10k/l3.3-euryale-70b"
+   ],
+   "repo": "Sao10K/L3.3-70B-Euryale-v2.3",
+   "swa_layers": 0,
+   "vocab_size": 128256
+  },
+  "TheDrummer/Skyfall-36B-v2": {
+   "A": 72477573120,
+   "B_full": 1048576,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 36238786560,
+   "attention": "GQA (32 heads / 8 kv, head_dim 128)",
+   "check": {
+    "0": 72477573120,
+    "1000": 73526149120,
+    "1000000": 1121053573120,
+    "128000": 206695301120,
+    "32000": 106032005120
+   },
+   "config_url": "https://huggingface.co/TheDrummer/Skyfall-36B-v2/blob/main/config.json",
+   "full_attn_layers": 64,
+   "hidden_size": 5120,
+   "layers": 64,
+   "lm_head": 1342177280,
+   "mlp": "dense MLP, ff=32768",
+   "model_type": "mistral",
+   "openrouter_ids": [
+    "thedrummer/skyfall-36b-v2"
+   ],
+   "repo": "TheDrummer/Skyfall-36B-v2",
+   "swa_layers": 0,
+   "vocab_size": 131072
+  },
+  "TheDrummer/UnslopNemo-12B-v4.1": {
+   "A": 23152558080,
+   "B_full": 655360,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 11576279040,
+   "attention": "GQA (32 heads / 8 kv, head_dim 128)",
+   "check": {
+    "0": 23152558080,
+    "1000": 23807918080,
+    "1000000": 678512558080,
+    "128000": 107038638080,
+    "32000": 44124078080
+   },
+   "config_url": "https://huggingface.co/TheDrummer/UnslopNemo-12B-v4.1/blob/main/config.json",
+   "full_attn_layers": 40,
+   "hidden_size": 5120,
+   "layers": 40,
+   "lm_head": 1342177280,
+   "mlp": "dense MLP, ff=14336",
+   "model_type": "mistral",
+   "openrouter_ids": [
+    "thedrummer/unslopnemo-12b"
+   ],
+   "repo": "TheDrummer/UnslopNemo-12B-v4.1",
+   "swa_layers": 0,
+   "vocab_size": 131072
+  },
+  "Undi95/ReMM-SLERP-L2-13B": {
+   "A": 25703219200,
+   "B_full": 819200,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 12851609600,
+   "attention": "GQA (40 heads / 40 kv, head_dim 128)",
+   "check": {
+    "0": 25703219200,
+    "1000": 26522419200,
+    "1000000": 844903219200,
+    "128000": 130560819200,
+    "32000": 51917619200
+   },
+   "config_url": "https://huggingface.co/Undi95/ReMM-SLERP-L2-13B/blob/main/config.json",
+   "full_attn_layers": 40,
+   "hidden_size": 5120,
+   "layers": 40,
+   "lm_head": 327680000,
+   "mlp": "dense MLP, ff=13824",
+   "model_type": "llama",
+   "openrouter_ids": [
+    "undi95/remm-slerp-l2-13b"
+   ],
+   "repo": "Undi95/ReMM-SLERP-L2-13B",
+   "swa_layers": 0,
+   "vocab_size": 32000
+  },
+  "anthracite-org/magnum-v4-72b": {
+   "A": 142916714496,
+   "B_full": 2621440,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 71458357248,
+   "attention": "GQA (64 heads / 8 kv, head_dim 128)",
+   "check": {
+    "0": 142916714496,
+    "1000": 145538154496,
+    "1000000": 2764356714496,
+    "128000": 478461034496,
+    "32000": 226802794496
+   },
+   "config_url": "https://huggingface.co/anthracite-org/magnum-v4-72b/blob/main/config.json",
+   "full_attn_layers": 80,
+   "hidden_size": 8192,
+   "layers": 80,
+   "lm_head": 2491416576,
+   "mlp": "dense MLP, ff=29568",
+   "model_type": "qwen2",
+   "openrouter_ids": [
+    "anthracite-org/magnum-v4-72b"
+   ],
+   "repo": "anthracite-org/magnum-v4-72b",
+   "swa_layers": 0,
+   "vocab_size": 152064
+  },
+  "cognitivecomputations/Dolphin-Mistral-24B-Venice-Edition": {
+   "A": 45801799680,
+   "B_full": 655360,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 22900899840,
+   "attention": "GQA (32 heads / 8 kv, head_dim 128)",
+   "check": {
+    "0": 45801799680,
+    "1000": 46457159680,
+    "1000000": 701161799680,
+    "128000": 129687879680,
+    "32000": 66773319680
+   },
+   "config_url": "https://huggingface.co/cognitivecomputations/Dolphin-Mistral-24B-Venice-Edition/blob/main/config.json",
+   "full_attn_layers": 40,
+   "hidden_size": 5120,
+   "layers": 40,
+   "lm_head": 1342177280,
+   "mlp": "dense MLP, ff=32768",
+   "model_type": "mistral",
+   "openrouter_ids": [
+    "cognitivecomputations/dolphin-mistral-24b-venice-edition"
+   ],
+   "repo": "cognitivecomputations/Dolphin-Mistral-24B-Venice-Edition",
+   "swa_layers": 0,
+   "vocab_size": 131072
+  },
+  "deepseek-ai/DeepSeek-R1": {
+   "A": 73249193984,
+   "B_full": 4997120,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 36624596992,
+   "attention": "MLA (q_lora=1536, kv_lora=512)",
+   "check": {
+    "0": 73249193984,
+    "1000": 78246313984,
+    "1000000": 5070369193984,
+    "128000": 712880553984,
+    "32000": 233157033984
+   },
+   "config_url": "https://huggingface.co/deepseek-ai/DeepSeek-R1/blob/main/config.json",
+   "full_attn_layers": 61,
+   "hidden_size": 7168,
+   "layers": 61,
+   "lm_head": 1853358080,
+   "mlp": "58 of 61 layers MoE, 8 routed + 1 shared of 256 experts, expert ff=2048",
+   "model_type": "deepseek_v3",
+   "openrouter_ids": [
+    "deepseek/deepseek-r1"
+   ],
+   "repo": "deepseek-ai/DeepSeek-R1",
+   "swa_layers": 0,
+   "vocab_size": 129280
+  },
+  "deepseek-ai/DeepSeek-R1-0528": {
+   "A": 73249193984,
+   "B_full": 4997120,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 36624596992,
+   "attention": "MLA (q_lora=1536, kv_lora=512)",
+   "check": {
+    "0": 73249193984,
+    "1000": 78246313984,
+    "1000000": 5070369193984,
+    "128000": 712880553984,
+    "32000": 233157033984
+   },
+   "config_url": "https://huggingface.co/deepseek-ai/DeepSeek-R1-0528/blob/main/config.json",
+   "full_attn_layers": 61,
+   "hidden_size": 7168,
+   "layers": 61,
+   "lm_head": 1853358080,
+   "mlp": "58 of 61 layers MoE, 8 routed + 1 shared of 256 experts, expert ff=2048",
+   "model_type": "deepseek_v3",
+   "openrouter_ids": [
+    "deepseek/deepseek-r1-0528"
+   ],
+   "repo": "deepseek-ai/DeepSeek-R1-0528",
+   "swa_layers": 0,
+   "vocab_size": 129280
+  },
+  "deepseek-ai/DeepSeek-R1-Distill-Llama-70B": {
+   "A": 139003428864,
+   "B_full": 2621440,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 69501714432,
+   "attention": "GQA (64 heads / 8 kv, head_dim 128)",
+   "check": {
+    "0": 139003428864,
+    "1000": 141624868864,
+    "1000000": 2760443428864,
+    "128000": 474547748864,
+    "32000": 222889508864
+   },
+   "config_url": "https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Llama-70B/blob/main/config.json",
+   "full_attn_layers": 80,
+   "hidden_size": 8192,
+   "layers": 80,
+   "lm_head": 2101346304,
+   "mlp": "dense MLP, ff=28672",
+   "model_type": "llama",
+   "openrouter_ids": [
+    "deepseek/deepseek-r1-distill-llama-70b"
+   ],
+   "repo": "deepseek-ai/DeepSeek-R1-Distill-Llama-70B",
+   "swa_layers": 0,
+   "vocab_size": 128256
+  },
+  "deepseek-ai/DeepSeek-V3": {
+   "A": 73249193984,
+   "B_full": 4997120,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 36624596992,
+   "attention": "MLA (q_lora=1536, kv_lora=512)",
+   "check": {
+    "0": 73249193984,
+    "1000": 78246313984,
+    "1000000": 5070369193984,
+    "128000": 712880553984,
+    "32000": 233157033984
+   },
+   "config_url": "https://huggingface.co/deepseek-ai/DeepSeek-V3/blob/main/config.json",
+   "full_attn_layers": 61,
+   "hidden_size": 7168,
+   "layers": 61,
+   "lm_head": 1853358080,
+   "mlp": "58 of 61 layers MoE, 8 routed + 1 shared of 256 experts, expert ff=2048",
+   "model_type": "deepseek_v3",
+   "openrouter_ids": [
+    "deepseek/deepseek-chat"
+   ],
+   "repo": "deepseek-ai/DeepSeek-V3",
+   "swa_layers": 0,
+   "vocab_size": 129280
+  },
+  "deepseek-ai/DeepSeek-V3-0324": {
+   "A": 73249193984,
+   "B_full": 4997120,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 36624596992,
+   "attention": "MLA (q_lora=1536, kv_lora=512)",
+   "check": {
+    "0": 73249193984,
+    "1000": 78246313984,
+    "1000000": 5070369193984,
+    "128000": 712880553984,
+    "32000": 233157033984
+   },
+   "config_url": "https://huggingface.co/deepseek-ai/DeepSeek-V3-0324/blob/main/config.json",
+   "full_attn_layers": 61,
+   "hidden_size": 7168,
+   "layers": 61,
+   "lm_head": 1853358080,
+   "mlp": "58 of 61 layers MoE, 8 routed + 1 shared of 256 experts, expert ff=2048",
+   "model_type": "deepseek_v3",
+   "openrouter_ids": [
+    "deepseek/deepseek-chat-v3-0324"
+   ],
+   "repo": "deepseek-ai/DeepSeek-V3-0324",
+   "swa_layers": 0,
+   "vocab_size": 129280
+  },
+  "deepseek-ai/DeepSeek-V3.1": {
+   "A": 73249193984,
+   "B_full": 4997120,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 36624596992,
+   "attention": "MLA (q_lora=1536, kv_lora=512)",
+   "check": {
+    "0": 73249193984,
+    "1000": 78246313984,
+    "1000000": 5070369193984,
+    "128000": 712880553984,
+    "32000": 233157033984
+   },
+   "config_url": "https://huggingface.co/deepseek-ai/DeepSeek-V3.1/blob/main/config.json",
+   "full_attn_layers": 61,
+   "hidden_size": 7168,
+   "layers": 61,
+   "lm_head": 1853358080,
+   "mlp": "58 of 61 layers MoE, 8 routed + 1 shared of 256 experts, expert ff=2048",
+   "model_type": "deepseek_v3",
+   "openrouter_ids": [
+    "deepseek/deepseek-chat-v3.1"
+   ],
+   "repo": "deepseek-ai/DeepSeek-V3.1",
+   "swa_layers": 0,
+   "vocab_size": 129280
+  },
+  "deepseek-ai/DeepSeek-V3.1-Terminus": {
+   "A": 73249193984,
+   "B_full": 4997120,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 36624596992,
+   "attention": "MLA (q_lora=1536, kv_lora=512)",
+   "check": {
+    "0": 73249193984,
+    "1000": 78246313984,
+    "1000000": 5070369193984,
+    "128000": 712880553984,
+    "32000": 233157033984
+   },
+   "config_url": "https://huggingface.co/deepseek-ai/DeepSeek-V3.1-Terminus/blob/main/config.json",
+   "full_attn_layers": 61,
+   "hidden_size": 7168,
+   "layers": 61,
+   "lm_head": 1853358080,
+   "mlp": "58 of 61 layers MoE, 8 routed + 1 shared of 256 experts, expert ff=2048",
+   "model_type": "deepseek_v3",
+   "openrouter_ids": [
+    "deepseek/deepseek-v3.1-terminus"
+   ],
+   "repo": "deepseek-ai/DeepSeek-V3.1-Terminus",
+   "swa_layers": 0,
+   "vocab_size": 129280
+  },
+  "ibm-granite/granite-4.2-8b": {
+   "A": 16760438784,
+   "B_full": 655360,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 8380219392,
+   "attention": "GQA (32 heads / 8 kv, head_dim 128)",
+   "check": {
+    "0": 16760438784,
+    "1000": 17415798784,
+    "1000000": 672120438784,
+    "128000": 100646518784,
+    "32000": 37731958784
+   },
+   "config_url": "https://huggingface.co/ibm-granite/granite-4.2-8b/blob/main/config.json",
+   "full_attn_layers": 40,
+   "hidden_size": 4096,
+   "layers": 40,
+   "lm_head": 822083584,
+   "mlp": "dense MLP, ff=12800",
+   "model_type": "granite",
+   "openrouter_ids": [
+    "ibm-granite/granite-4.2-8b"
+   ],
+   "repo": "ibm-granite/granite-4.2-8b",
+   "swa_layers": 0,
+   "vocab_size": 100352
+  },
+  "meta-models/Muse-Glimmer-30B": {
+   "A": 50181767168,
+   "B_full": 212992,
+   "B_swa": 638976,
+   "W": 2048,
+   "active_params_derived": 25090883584,
+   "attention": "GQA (32 heads / 2 kv, head_dim 128)",
+   "check": {
+    "0": 50181767168,
+    "1000": 51033735168,
+    "1000000": 264482390016,
+    "128000": 78753366016,
+    "32000": 58306134016
+   },
+   "config_url": "https://huggingface.co/meta-models/Muse-Glimmer-30B/blob/main/config.json",
+   "full_attn_layers": 13,
+   "hidden_size": 6656,
+   "layers": 52,
+   "lm_head": 2689662976,
+   "mlp": "dense MLP, ff=19968",
+   "model_type": "muse_glimmer_text",
+   "openrouter_ids": [
+    "meta/muse-glimmer-30b",
+    "meta/muse-glimmer-30b:batch"
+   ],
+   "repo": "meta-models/Muse-Glimmer-30B",
+   "swa_layers": 39,
+   "vocab_size": 202048
+  },
+  "microsoft/phi-4": {
+   "A": 28290580480,
+   "B_full": 819200,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 14145290240,
+   "attention": "GQA (40 heads / 10 kv, head_dim 128)",
+   "check": {
+    "0": 28290580480,
+    "1000": 29109780480,
+    "1000000": 847490580480,
+    "128000": 133148180480,
+    "32000": 54504980480
+   },
+   "config_url": "https://huggingface.co/microsoft/phi-4/blob/main/config.json",
+   "full_attn_layers": 40,
+   "hidden_size": 5120,
+   "layers": 40,
+   "lm_head": 1027604480,
+   "mlp": "dense MLP, ff=17920",
+   "model_type": "phi3",
+   "openrouter_ids": [
+    "microsoft/phi-4"
+   ],
+   "repo": "microsoft/phi-4",
+   "swa_layers": 0,
+   "vocab_size": 100352
+  },
+  "mistralai/Devstral-2-123B-Instruct-2512": {
+   "A": 246826401792,
+   "B_full": 4325376,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 123413200896,
+   "attention": "GQA (96 heads / 8 kv, head_dim 128)",
+   "check": {
+    "0": 246826401792,
+    "1000": 251151777792,
+    "1000000": 4572202401792,
+    "128000": 800474529792,
+    "32000": 385238433792
+   },
+   "config_url": "https://huggingface.co/mistralai/Devstral-2-123B-Instruct-2512/blob/main/config.json",
+   "full_attn_layers": 88,
+   "hidden_size": 12288,
+   "layers": 88,
+   "lm_head": 3221225472,
+   "mlp": "dense MLP, ff=28672",
+   "model_type": "ministral3",
+   "openrouter_ids": [
+    "mistralai/devstral-2512"
+   ],
+   "repo": "mistralai/Devstral-2-123B-Instruct-2512",
+   "swa_layers": 0,
+   "vocab_size": 131072
+  },
+  "mistralai/Ministral-3-14B-Instruct-2512": {
+   "A": 25669140480,
+   "B_full": 655360,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 12834570240,
+   "attention": "GQA (32 heads / 8 kv, head_dim 128)",
+   "check": {
+    "0": 25669140480,
+    "1000": 26324500480,
+    "1000000": 681029140480,
+    "128000": 109555220480,
+    "32000": 46640660480
+   },
+   "config_url": "https://huggingface.co/mistralai/Ministral-3-14B-Instruct-2512/blob/main/config.json",
+   "full_attn_layers": 40,
+   "hidden_size": 5120,
+   "layers": 40,
+   "lm_head": 1342177280,
+   "mlp": "dense MLP, ff=16384",
+   "model_type": "ministral3",
+   "openrouter_ids": [
+    "mistralai/ministral-14b-2512"
+   ],
+   "repo": "mistralai/Ministral-3-14B-Instruct-2512",
+   "swa_layers": 0,
+   "vocab_size": 131072
+  },
+  "mistralai/Ministral-3-3B-Instruct-2512": {
+   "A": 6857687040,
+   "B_full": 425984,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 3428843520,
+   "attention": "GQA (32 heads / 8 kv, head_dim 128)",
+   "check": {
+    "0": 6857687040,
+    "1000": 7283671040,
+    "1000000": 432841687040,
+    "128000": 61383639040,
+    "32000": 20489175040
+   },
+   "config_url": "https://huggingface.co/mistralai/Ministral-3-3B-Instruct-2512/blob/main/config.json",
+   "full_attn_layers": 26,
+   "hidden_size": 3072,
+   "layers": 26,
+   "lm_head": 805306368,
+   "mlp": "dense MLP, ff=9216",
+   "model_type": "ministral3",
+   "openrouter_ids": [
+    "mistralai/ministral-3b-2512"
+   ],
+   "repo": "mistralai/Ministral-3-3B-Instruct-2512",
+   "swa_layers": 0,
+   "vocab_size": 131072
+  },
+  "mistralai/Ministral-3-8B-Instruct-2512": {
+   "A": 15904800768,
+   "B_full": 557056,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 7952400384,
+   "attention": "GQA (32 heads / 8 kv, head_dim 128)",
+   "check": {
+    "0": 15904800768,
+    "1000": 16461856768,
+    "1000000": 572960800768,
+    "128000": 87207968768,
+    "32000": 33730592768
+   },
+   "config_url": "https://huggingface.co/mistralai/Ministral-3-8B-Instruct-2512/blob/main/config.json",
+   "full_attn_layers": 34,
+   "hidden_size": 4096,
+   "layers": 34,
+   "lm_head": 1073741824,
+   "mlp": "dense MLP, ff=14336",
+   "model_type": "ministral3",
+   "openrouter_ids": [
+    "mistralai/ministral-8b-2512"
+   ],
+   "repo": "mistralai/Ministral-3-8B-Instruct-2512",
+   "swa_layers": 0,
+   "vocab_size": 131072
+  },
+  "mistralai/Mistral-Nemo-Instruct-2407": {
+   "A": 23152558080,
+   "B_full": 655360,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 11576279040,
+   "attention": "GQA (32 heads / 8 kv, head_dim 128)",
+   "check": {
+    "0": 23152558080,
+    "1000": 23807918080,
+    "1000000": 678512558080,
+    "128000": 107038638080,
+    "32000": 44124078080
+   },
+   "config_url": "https://huggingface.co/mistralai/Mistral-Nemo-Instruct-2407/blob/main/config.json",
+   "full_attn_layers": 40,
+   "hidden_size": 5120,
+   "layers": 40,
+   "lm_head": 1342177280,
+   "mlp": "dense MLP, ff=14336",
+   "model_type": "mistral",
+   "openrouter_ids": [
+    "mistralai/mistral-nemo"
+   ],
+   "repo": "mistralai/Mistral-Nemo-Instruct-2407",
+   "swa_layers": 0,
+   "vocab_size": 131072
+  },
+  "mistralai/Mistral-Small-24B-Instruct-2501": {
+   "A": 45801799680,
+   "B_full": 655360,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 22900899840,
+   "attention": "GQA (32 heads / 8 kv, head_dim 128)",
+   "check": {
+    "0": 45801799680,
+    "1000": 46457159680,
+    "1000000": 701161799680,
+    "128000": 129687879680,
+    "32000": 66773319680
+   },
+   "config_url": "https://huggingface.co/mistralai/Mistral-Small-24B-Instruct-2501/blob/main/config.json",
+   "full_attn_layers": 40,
+   "hidden_size": 5120,
+   "layers": 40,
+   "lm_head": 1342177280,
+   "mlp": "dense MLP, ff=32768",
+   "model_type": "mistral",
+   "openrouter_ids": [
+    "mistralai/mistral-small-24b-instruct-2501"
+   ],
+   "repo": "mistralai/Mistral-Small-24B-Instruct-2501",
+   "swa_layers": 0,
+   "vocab_size": 131072
+  },
+  "mistralai/Mistral-Small-3.1-24B-Instruct-2503": {
+   "A": 45801799680,
+   "B_full": 655360,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 22900899840,
+   "attention": "GQA (32 heads / 8 kv, head_dim 128)",
+   "check": {
+    "0": 45801799680,
+    "1000": 46457159680,
+    "1000000": 701161799680,
+    "128000": 129687879680,
+    "32000": 66773319680
+   },
+   "config_url": "https://huggingface.co/mistralai/Mistral-Small-3.1-24B-Instruct-2503/blob/main/config.json",
+   "full_attn_layers": 40,
+   "hidden_size": 5120,
+   "layers": 40,
+   "lm_head": 1342177280,
+   "mlp": "dense MLP, ff=32768",
+   "model_type": "mistral",
+   "openrouter_ids": [
+    "mistralai/mistral-small-3.1-24b-instruct"
+   ],
+   "repo": "mistralai/Mistral-Small-3.1-24B-Instruct-2503",
+   "swa_layers": 0,
+   "vocab_size": 131072
+  },
+  "mistralai/Mistral-Small-3.2-24B-Instruct-2506": {
+   "A": 45801799680,
+   "B_full": 655360,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 22900899840,
+   "attention": "GQA (32 heads / 8 kv, head_dim 128)",
+   "check": {
+    "0": 45801799680,
+    "1000": 46457159680,
+    "1000000": 701161799680,
+    "128000": 129687879680,
+    "32000": 66773319680
+   },
+   "config_url": "https://huggingface.co/mistralai/Mistral-Small-3.2-24B-Instruct-2506/blob/main/config.json",
+   "full_attn_layers": 40,
+   "hidden_size": 5120,
+   "layers": 40,
+   "lm_head": 1342177280,
+   "mlp": "dense MLP, ff=32768",
+   "model_type": "mistral",
+   "openrouter_ids": [
+    "mistralai/mistral-small-3.2-24b-instruct"
+   ],
+   "repo": "mistralai/Mistral-Small-3.2-24B-Instruct-2506",
+   "swa_layers": 0,
+   "vocab_size": 131072
+  },
+  "mistralai/Mixtral-8x22B-Instruct-v0.1": {
+   "A": 77918896128,
+   "B_full": 1376256,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 38959448064,
+   "attention": "GQA (48 heads / 8 kv, head_dim 128)",
+   "check": {
+    "0": 77918896128,
+    "1000": 79295152128,
+    "1000000": 1454174896128,
+    "128000": 254079664128,
+    "32000": 121959088128
+   },
+   "config_url": "https://huggingface.co/mistralai/Mixtral-8x22B-Instruct-v0.1/blob/main/config.json",
+   "full_attn_layers": 56,
+   "hidden_size": 6144,
+   "layers": 56,
+   "lm_head": 402653184,
+   "mlp": "56 of 56 layers MoE, 2/8 experts active, expert ff=16384",
+   "model_type": "mixtral",
+   "openrouter_ids": [
+    "mistralai/mixtral-8x22b-instruct"
+   ],
+   "repo": "mistralai/Mixtral-8x22B-Instruct-v0.1",
+   "swa_layers": 0,
+   "vocab_size": 32768
+  },
+  "mistralai/Voxtral-Small-24B-2507": {
+   "A": 45801799680,
+   "B_full": 655360,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 22900899840,
+   "attention": "GQA (32 heads / 8 kv, head_dim 128)",
+   "check": {
+    "0": 45801799680,
+    "1000": 46457159680,
+    "1000000": 701161799680,
+    "128000": 129687879680,
+    "32000": 66773319680
+   },
+   "config_url": "https://huggingface.co/mistralai/Voxtral-Small-24B-2507/blob/main/config.json",
+   "full_attn_layers": 40,
+   "hidden_size": 5120,
+   "layers": 40,
+   "lm_head": 1342177280,
+   "mlp": "dense MLP, ff=32768",
+   "model_type": "llama",
+   "openrouter_ids": [
+    "mistralai/voxtral-small-24b-2507"
+   ],
+   "repo": "mistralai/Voxtral-Small-24B-2507",
+   "swa_layers": 0,
+   "vocab_size": 131072
+  },
+  "nvidia/Nemotron-3.5-Content-Safety": {
+   "A": 7759790080,
+   "B_full": 40960,
+   "B_swa": 237568,
+   "W": 1024,
+   "active_params_derived": 3879895040,
+   "attention": "GQA (8 heads / 4 kv, head_dim 256)",
+   "check": {
+    "0": 7759790080,
+    "1000": 8038318080,
+    "1000000": 48963059712,
+    "128000": 13245939712,
+    "32000": 9313779712
+   },
+   "config_url": "https://huggingface.co/nvidia/Nemotron-3.5-Content-Safety/blob/main/config.json",
+   "full_attn_layers": 5,
+   "hidden_size": 2560,
+   "layers": 34,
+   "lm_head": 1342504960,
+   "mlp": "dense MLP, ff=10240",
+   "model_type": "gemma3_text",
+   "openrouter_ids": [
+    "nvidia/nemotron-3.5-content-safety",
+    "nvidia/nemotron-3.5-content-safety:free"
+   ],
+   "repo": "nvidia/Nemotron-3.5-Content-Safety",
+   "swa_layers": 29,
+   "vocab_size": 262208
+  },
+  "openai/gpt-oss-120b": {
+   "A": 10262200320,
+   "B_full": 294912,
+   "B_swa": 294912,
+   "W": 128,
+   "active_params_derived": 5131100160,
+   "attention": "GQA (64 heads / 8 kv, head_dim 64)",
+   "check": {
+    "0": 10262200320,
+    "1000": 10594861056,
+    "1000000": 305211949056,
+    "128000": 48048685056,
+    "32000": 19737133056
+   },
+   "config_url": "https://huggingface.co/openai/gpt-oss-120b/blob/main/config.json",
+   "full_attn_layers": 18,
+   "hidden_size": 2880,
+   "layers": 36,
+   "lm_head": 1158266880,
+   "mlp": "36 of 36 layers MoE, 4/128 experts active, expert ff=2880",
+   "model_type": "gpt_oss",
+   "openrouter_ids": [
+    "openai/gpt-oss-120b",
+    "openai/gpt-oss-120b:batch"
+   ],
+   "repo": "openai/gpt-oss-120b",
+   "swa_layers": 18,
+   "vocab_size": 201088
+  },
+  "openai/gpt-oss-20b": {
+   "A": 7214284800,
+   "B_full": 196608,
+   "B_swa": 196608,
+   "W": 128,
+   "active_params_derived": 3607142400,
+   "attention": "GQA (64 heads / 8 kv, head_dim 64)",
+   "check": {
+    "0": 7214284800,
+    "1000": 7436058624,
+    "1000000": 203847450624,
+    "128000": 32405274624,
+    "32000": 13530906624
+   },
+   "config_url": "https://huggingface.co/openai/gpt-oss-20b/blob/main/config.json",
+   "full_attn_layers": 12,
+   "hidden_size": 2880,
+   "layers": 24,
+   "lm_head": 1158266880,
+   "mlp": "24 of 24 layers MoE, 4/32 experts active, expert ff=2880",
+   "model_type": "gpt_oss",
+   "openrouter_ids": [
+    "openai/gpt-oss-20b",
+    "openai/gpt-oss-20b:batch"
+   ],
+   "repo": "openai/gpt-oss-20b",
+   "swa_layers": 12,
+   "vocab_size": 201088
+  },
+  "openai/gpt-oss-safeguard-20b": {
+   "A": 7214284800,
+   "B_full": 196608,
+   "B_swa": 196608,
+   "W": 128,
+   "active_params_derived": 3607142400,
+   "attention": "GQA (64 heads / 8 kv, head_dim 64)",
+   "check": {
+    "0": 7214284800,
+    "1000": 7436058624,
+    "1000000": 203847450624,
+    "128000": 32405274624,
+    "32000": 13530906624
+   },
+   "config_url": "https://huggingface.co/openai/gpt-oss-safeguard-20b/blob/main/config.json",
+   "full_attn_layers": 12,
+   "hidden_size": 2880,
+   "layers": 24,
+   "lm_head": 1158266880,
+   "mlp": "24 of 24 layers MoE, 4/32 experts active, expert ff=2880",
+   "model_type": "gpt_oss",
+   "openrouter_ids": [
+    "openai/gpt-oss-safeguard-20b"
+   ],
+   "repo": "openai/gpt-oss-safeguard-20b",
+   "swa_layers": 12,
+   "vocab_size": 201088
+  },
+  "tencent/Hy-MT2-1.8B": {
+   "A": 3581878272,
+   "B_full": 262144,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 1790939136,
+   "attention": "GQA (16 heads / 4 kv, head_dim 128)",
+   "check": {
+    "0": 3581878272,
+    "1000": 3844022272,
+    "1000000": 265725878272,
+    "128000": 37136310272,
+    "32000": 11970486272
+   },
+   "config_url": "https://huggingface.co/tencent/Hy-MT2-1.8B/blob/main/config.json",
+   "full_attn_layers": 32,
+   "hidden_size": 2048,
+   "layers": 32,
+   "lm_head": 494870528,
+   "mlp": "dense MLP, ff=6144",
+   "model_type": "hunyuan_v1_dense",
+   "openrouter_ids": [
+    "tencent/hy-mt2-1.8b"
+   ],
+   "repo": "tencent/Hy-MT2-1.8B",
+   "swa_layers": 0,
+   "vocab_size": 120818
+  },
+  "tencent/Hy-MT2-7B": {
+   "A": 15008587776,
+   "B_full": 524288,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 7504293888,
+   "attention": "GQA (32 heads / 8 kv, head_dim 128)",
+   "check": {
+    "0": 15008587776,
+    "1000": 15532875776,
+    "1000000": 539296587776,
+    "128000": 82117451776,
+    "32000": 31785803776
+   },
+   "config_url": "https://huggingface.co/tencent/Hy-MT2-7B/blob/main/config.json",
+   "full_attn_layers": 32,
+   "hidden_size": 4096,
+   "layers": 32,
+   "lm_head": 1049944064,
+   "mlp": "dense MLP, ff=14336",
+   "model_type": "hunyuan_v1_dense",
+   "openrouter_ids": [
+    "tencent/hy-mt2-7b"
+   ],
+   "repo": "tencent/Hy-MT2-7B",
+   "swa_layers": 0,
+   "vocab_size": 128167
+  },
+  "thedrummer/cydonia-24b-v4.1": {
+   "A": 45801799680,
+   "B_full": 655360,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 22900899840,
+   "attention": "GQA (32 heads / 8 kv, head_dim 128)",
+   "check": {
+    "0": 45801799680,
+    "1000": 46457159680,
+    "1000000": 701161799680,
+    "128000": 129687879680,
+    "32000": 66773319680
+   },
+   "config_url": "https://huggingface.co/thedrummer/cydonia-24b-v4.1/blob/main/config.json",
+   "full_attn_layers": 40,
+   "hidden_size": 5120,
+   "layers": 40,
+   "lm_head": 1342177280,
+   "mlp": "dense MLP, ff=32768",
+   "model_type": "mistral",
+   "openrouter_ids": [
+    "thedrummer/cydonia-24b-v4.1"
+   ],
+   "repo": "thedrummer/cydonia-24b-v4.1",
+   "swa_layers": 0,
+   "vocab_size": 131072
+  },
+  "zai-org/GLM-4.5": {
+   "A": 65708032000,
+   "B_full": 4521984,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 32854016000,
+   "attention": "GQA (96 heads / 8 kv, head_dim 128)",
+   "check": {
+    "0": 65708032000,
+    "1000": 70230016000,
+    "1000000": 4587692032000,
+    "128000": 644521984000,
+    "32000": 210411520000
+   },
+   "config_url": "https://huggingface.co/zai-org/GLM-4.5/blob/main/config.json",
+   "full_attn_layers": 92,
+   "hidden_size": 5120,
+   "layers": 92,
+   "lm_head": 1551892480,
+   "mlp": "89 of 92 layers MoE, 8 routed + 1 shared of 160 experts, expert ff=1536",
+   "model_type": "glm4_moe",
+   "openrouter_ids": [
+    "z-ai/glm-4.5"
+   ],
+   "repo": "zai-org/GLM-4.5",
+   "swa_layers": 0,
+   "vocab_size": 151552
+  },
+  "zai-org/GLM-4.5-Air": {
+   "A": 25604653056,
+   "B_full": 2260992,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 12802326528,
+   "attention": "GQA (96 heads / 8 kv, head_dim 128)",
+   "check": {
+    "0": 25604653056,
+    "1000": 27865645056,
+    "1000000": 2286596653056,
+    "128000": 315011629056,
+    "32000": 97956397056
+   },
+   "config_url": "https://huggingface.co/zai-org/GLM-4.5-Air/blob/main/config.json",
+   "full_attn_layers": 46,
+   "hidden_size": 4096,
+   "layers": 46,
+   "lm_head": 1241513984,
+   "mlp": "45 of 46 layers MoE, 8 routed + 1 shared of 128 experts, expert ff=1408",
+   "model_type": "glm4_moe",
+   "openrouter_ids": [
+    "z-ai/glm-4.5-air"
+   ],
+   "repo": "zai-org/GLM-4.5-Air",
+   "swa_layers": 0,
+   "vocab_size": 151552
+  },
+  "zai-org/GLM-4.5V": {
+   "A": 25604653056,
+   "B_full": 2260992,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 12802326528,
+   "attention": "GQA (96 heads / 8 kv, head_dim 128)",
+   "check": {
+    "0": 25604653056,
+    "1000": 27865645056,
+    "1000000": 2286596653056,
+    "128000": 315011629056,
+    "32000": 97956397056
+   },
+   "config_url": "https://huggingface.co/zai-org/GLM-4.5V/blob/main/config.json",
+   "full_attn_layers": 46,
+   "hidden_size": 4096,
+   "layers": 46,
+   "lm_head": 1241513984,
+   "mlp": "45 of 46 layers MoE, 8 routed + 1 shared of 128 experts, expert ff=1408",
+   "model_type": "glm4v_moe_text",
+   "openrouter_ids": [
+    "z-ai/glm-4.5v"
+   ],
+   "repo": "zai-org/GLM-4.5V",
+   "swa_layers": 0,
+   "vocab_size": 151552
+  },
+  "zai-org/GLM-4.6": {
+   "A": 65708032000,
+   "B_full": 4521984,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 32854016000,
+   "attention": "GQA (96 heads / 8 kv, head_dim 128)",
+   "check": {
+    "0": 65708032000,
+    "1000": 70230016000,
+    "1000000": 4587692032000,
+    "128000": 644521984000,
+    "32000": 210411520000
+   },
+   "config_url": "https://huggingface.co/zai-org/GLM-4.6/blob/main/config.json",
+   "full_attn_layers": 92,
+   "hidden_size": 5120,
+   "layers": 92,
+   "lm_head": 1551892480,
+   "mlp": "89 of 92 layers MoE, 8 routed + 1 shared of 160 experts, expert ff=1536",
+   "model_type": "glm4_moe",
+   "openrouter_ids": [
+    "z-ai/glm-4.6"
+   ],
+   "repo": "zai-org/GLM-4.6",
+   "swa_layers": 0,
+   "vocab_size": 151552
+  },
+  "zai-org/GLM-4.6V": {
+   "A": 25604653056,
+   "B_full": 2260992,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 12802326528,
+   "attention": "GQA (96 heads / 8 kv, head_dim 128)",
+   "check": {
+    "0": 25604653056,
+    "1000": 27865645056,
+    "1000000": 2286596653056,
+    "128000": 315011629056,
+    "32000": 97956397056
+   },
+   "config_url": "https://huggingface.co/zai-org/GLM-4.6V/blob/main/config.json",
+   "full_attn_layers": 46,
+   "hidden_size": 4096,
+   "layers": 46,
+   "lm_head": 1241513984,
+   "mlp": "45 of 46 layers MoE, 8 routed + 1 shared of 128 experts, expert ff=1408",
+   "model_type": "glm4v_moe_text",
+   "openrouter_ids": [
+    "z-ai/glm-4.6v"
+   ],
+   "repo": "zai-org/GLM-4.6V",
+   "swa_layers": 0,
+   "vocab_size": 151552
+  },
+  "zai-org/GLM-4.7": {
+   "A": 65708032000,
+   "B_full": 4521984,
+   "B_swa": 0,
+   "W": 0,
+   "active_params_derived": 32854016000,
+   "attention": "GQA (96 heads / 8 kv, head_dim 128)",
+   "check": {
+    "0": 65708032000,
+    "1000": 70230016000,
+    "1000000": 4587692032000,
+    "128000": 644521984000,
+    "32000": 210411520000
+   },
+   "config_url": "https://huggingface.co/zai-org/GLM-4.7/blob/main/config.json",
+   "full_attn_layers": 92,
+   "hidden_size": 5120,
+   "layers": 92,
+   "lm_head": 1551892480,
+   "mlp": "89 of 92 layers MoE, 8 routed + 1 shared of 160 experts, expert ff=1536",
+   "model_type": "glm4_moe",
+   "openrouter_ids": [
+    "z-ai/glm-4.7"
+   ],
+   "repo": "zai-org/GLM-4.7",
+   "swa_layers": 0,
+   "vocab_size": 151552
+  }
+ },
+ "not_modelled": {
+  "CohereLabs/North-Mini-Code-1.0": "cohere2_moe",
+  "LiquidAI/LFM2.5-2.6B": "lfm2",
+  "MiniMaxAI/MiniMax-M2": "minimax_m2",
+  "MiniMaxAI/MiniMax-M2.1": "minimax_m2",
+  "MiniMaxAI/MiniMax-M2.5": "minimax_m2",
+  "MiniMaxAI/MiniMax-M2.7": "minimax_m2",
+  "MiniMaxAI/MiniMax-Text-01": "minimax_text_01",
+  "MiniMaxAI/Minimax-M3": "minimax_m3_vl",
+  "Qwen/Qwen3-Coder-Next": "qwen3_next",
+  "Qwen/Qwen3-Next-80B-A3B-Instruct": "qwen3_next",
+  "Qwen/Qwen3-Next-80B-A3B-Thinking": "qwen3_next",
+  "Qwen/Qwen3.5-122B-A10B": "qwen3_5_moe_text",
+  "Qwen/Qwen3.5-27B": "qwen3_5_text",
+  "Qwen/Qwen3.5-35B-A3B": "qwen3_5_moe_text",
+  "Qwen/Qwen3.5-397B-A17B": "qwen3_5_moe_text",
+  "Qwen/Qwen3.5-9B": "qwen3_5_text",
+  "Qwen/Qwen3.6-27B": "qwen3_5_text",
+  "Qwen/Qwen3.6-35B-A3B": "qwen3_5_moe_text",
+  "Qwen/Qwen3.8-2.4T-A95B": "qwen3_5_moe_text",
+  "Qwen/Qwen3.8-27B": "qwen3_5_text",
+  "Qwen/Qwen3.8-Flash-Next": "qwen4_exp_text",
+  "XiaomiMiMo/MiMo-V2.5": "mimo_v2",
+  "XiaomiMiMo/MiMo-V2.5-Pro": "mimo_v2",
+  "arcee-ai/Trinity-Large-Thinking": "afmoe",
+  "baidu/ERNIE-4.5-VL-424B-A47B-PT": "ernie4_5_moe_vl",
+  "deepseek-ai/DeepSeek-V3.2": "deepseek_v32",
+  "deepseek-ai/DeepSeek-V3.2-Exp": "deepseek_v32",
+  "deepseek-ai/DeepSeek-V4-Flash": "deepseek_v4",
+  "deepseek-ai/DeepSeek-V4-Flash-0731": "deepseek_v4",
+  "deepseek-ai/DeepSeek-V4-Flash-Vision-Exp": "deepseek_v4",
+  "deepseek-ai/DeepSeek-V4-Pro": "deepseek_v4",
+  "deepseek-ai/DeepSeek-V4-Pro-0813": "deepseek_v4",
+  "google/gemma-4-26B-A4B-it": "gemma4_text",
+  "google/gemma-4-31B-it": "gemma4_text",
+  "ibm-granite/granite-4.0-h-micro": "granitemoehybrid",
+  "inclusionAI/Ling-3.0-flash": "bailing_hybrid",
+  "meituan-longcat/LongCat-2.0": "?",
+  "mistralai/Mistral-Small-4-119B-2603": "mistral4",
+  "moonshotai/Kimi-K2-Instruct": "kimi_k2",
+  "moonshotai/Kimi-K2-Instruct-0905": "kimi_k2",
+  "moonshotai/Kimi-K2-Thinking": "kimi_k2",
+  "moonshotai/Kimi-K2.5": "kimi_k2",
+  "moonshotai/Kimi-K2.6": "kimi_k2",
+  "moonshotai/Kimi-K2.7-Code": "kimi_k2",
+  "moonshotai/Kimi-K3": "kimi_linear",
+  "nex-agi/Nex-N2-Mini": "qwen3_5_moe_text",
+  "nex-agi/Nex-N2-Pro": "qwen3_5_moe_text",
+  "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16": "nemotron_h",
+  "nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-FP8": "nemotron_h",
+  "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B-BF16": "nemotron_h",
+  "nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16": "nemotron_h",
+  "nvidia/Nemotron-3-Nano-Omni-30B-A3B-Reasoning-BF16": "NemotronH_Nano_Omni_Reasoning_V3",
+  "poolside/Laguna-S-2.1": "laguna",
+  "poolside/Laguna-XS-2.1": "laguna",
+  "stepfun-ai/Step-3.5-Flash": "step3p5",
+  "stepfun-ai/Step-3.7-Flash": "step3p5",
+  "tencent/Hunyuan-A13B-Instruct": "hunyuan_v1_moe",
+  "tencent/Hy-MT2-30B-A3B": "hy_v3",
+  "tencent/Hy3": "hy_v3",
+  "tencent/Hy3-preview": "hy_v3",
+  "tencent/Hy4-preview": "hy_v4",
+  "thinkingmachines/Inkling": "inkling_mm_model",
+  "thinkingmachines/Inkling-Small": "inkling_mm_model",
+  "zai-org/GLM-4.7-Flash": "glm4_moe_lite",
+  "zai-org/GLM-5": "glm_moe_dsa",
+  "zai-org/GLM-5.1": "glm_moe_dsa",
+  "zai-org/GLM-5.2": "glm_moe_dsa",
+  "zai-org/GLM-5.3": "glm_moe_dsa",
+  "zai-org/GLM-5.3-Flash": "glm5_next_text"
+ },
+ "note": "Architecture only. Prices are fetched live by the page; they are not stored here, because they change.",
+ "source_config": "https://huggingface.co/<repo>/resolve/main/config.json",
+ "source_price": "https://openrouter.ai/api/v1/models"
+}

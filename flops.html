@@ -1,0 +1,555 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dollars per PetaFLOP</title>
+<meta name="description" content="What a token costs, divided by the arithmetic behind it. Live prices, architectures from each model's own config.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap">
+<style>
+  :root{
+    --paper:#F6F5F1; --panel:#FFFFFF; --sunk:#EFEDE7; --rule:#DEDBD4;
+    --ink:#15181B; --muted:#6C7176; --faint:#9BA1A7;
+    --accent:#0B5F63; --up:#1C6E4A; --down:#9E3524; --warn:#8A5A00;
+    --disp:"Instrument Serif",Georgia,"Times New Roman",serif;
+    --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --paper:#0D0F10; --panel:#15191B; --sunk:#111517; --rule:#252B2F;
+      --ink:#E9EAEA; --muted:#98A0A6; --faint:#666E74;
+      --accent:#54C8CC; --up:#4BC98A; --down:#FF7361; --warn:#E0A343;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#0D0F10; --panel:#15191B; --sunk:#111517; --rule:#252B2F;
+    --ink:#E9EAEA; --muted:#98A0A6; --faint:#666E74;
+    --accent:#54C8CC; --up:#4BC98A; --down:#FF7361; --warn:#E0A343;
+  }
+  *{box-sizing:border-box}
+  body{background:var(--paper);color:var(--ink);font-family:var(--sans);
+       margin:0;line-height:1.62;font-size:15.5px;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1000px;margin:0 auto;padding:0 22px 96px}
+  a{color:var(--accent);text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--accent) 36%,transparent)}
+  a:hover{border-bottom-color:var(--accent)}
+  a:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+  .kick{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+        color:var(--muted);margin:48px 0 16px}
+  h1{font-family:var(--disp);font-weight:400;font-size:clamp(3rem,9vw,5.4rem);line-height:.92;
+     letter-spacing:-.015em;margin:0 0 18px;text-wrap:balance}
+  h1 em{font-style:italic;color:var(--accent)}
+  .dek{font-size:1.14rem;color:var(--muted);max-width:60ch;margin:0 0 12px}
+  .dek b{color:var(--ink);font-weight:500}
+  h2{font-family:var(--disp);font-weight:400;font-size:1.9rem;letter-spacing:-.01em;
+     margin:56px 0 6px;line-height:1.15}
+  h3{font-family:var(--sans);font-weight:600;font-size:.95rem;margin:26px 0 4px}
+  p{max-width:66ch;margin:0 0 14px;color:var(--ink)}
+  p.sub{color:var(--muted)}
+  .mono{font-family:var(--mono)}
+  code{font-family:var(--mono);font-size:.86em;background:var(--sunk);padding:1px 5px;border-radius:3px}
+
+  /* --- control bar --- */
+  .panel{background:var(--panel);border:1px solid var(--rule);border-radius:4px}
+  .ctrl{position:sticky;top:0;z-index:20;margin:30px 0 0;padding:15px 18px;
+        background:color-mix(in srgb,var(--panel) 92%,transparent);backdrop-filter:blur(9px);
+        border:1px solid var(--rule);border-radius:4px;
+        display:grid;grid-template-columns:1fr auto;gap:14px 22px;align-items:center}
+  .ctrl .row{display:flex;align-items:center;gap:13px;flex-wrap:wrap}
+  .lab{font-family:var(--mono);font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;
+       color:var(--muted);white-space:nowrap}
+  input[type=range]{flex:1;min-width:170px;accent-color:var(--accent);height:22px}
+  .ctxval{font-family:var(--mono);font-weight:600;font-size:1.05rem;min-width:8.5ch;
+          font-variant-numeric:tabular-nums;color:var(--ink)}
+  .chips{display:flex;gap:5px;flex-wrap:wrap}
+  .chip{font-family:var(--mono);font-size:11px;padding:4px 8px;border:1px solid var(--rule);
+        border-radius:3px;background:transparent;color:var(--muted);cursor:pointer}
+  .chip:hover{color:var(--ink);border-color:var(--faint)}
+  .chip[aria-pressed=true]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+
+  /* --- figures --- */
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));
+         gap:1px;background:var(--rule);border:1px solid var(--rule);border-radius:4px;
+         overflow:hidden;margin:22px 0 0}
+  .stat{background:var(--panel);padding:17px 18px 15px}
+  .stat .n{font-family:var(--disp);font-size:2.5rem;line-height:1;letter-spacing:-.02em;
+           font-variant-numeric:tabular-nums;display:block;color:var(--ink)}
+  .stat .k{font-family:var(--mono);font-size:10.5px;line-height:1.62;letter-spacing:.05em;
+           color:var(--muted);display:block;margin-top:9px}
+
+  figure{margin:24px 0 0}
+  .scroller{overflow-x:auto;background:var(--panel);border:1px solid var(--rule);border-radius:4px}
+  .scroller svg{display:block;min-width:660px;width:100%;height:auto}
+  figcaption{font-family:var(--mono);font-size:11.5px;line-height:1.75;color:var(--muted);
+             margin-top:10px;max-width:78ch}
+  .readout{font-family:var(--mono);font-size:12px;color:var(--ink);background:var(--sunk);
+           border:1px solid var(--rule);border-top:none;border-radius:0 0 4px 4px;
+           padding:9px 13px;min-height:36px;line-height:1.5}
+  .readout .dim{color:var(--muted)}
+
+  .braid line{stroke-linecap:round}
+  .braid g.ln:hover line, .braid g.ln.on line{stroke-width:2.6;opacity:1}
+  .axcap{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase}
+  .tick{font-family:var(--mono);font-size:9.5px}
+
+  /* --- table --- */
+  .tablewrap{overflow-x:auto;border:1px solid var(--rule);border-radius:4px;background:var(--panel);margin:22px 0 0}
+  table{border-collapse:collapse;width:100%;min-width:720px;font-size:13px}
+  th{font-family:var(--mono);font-size:10px;letter-spacing:.11em;text-transform:uppercase;
+     color:var(--muted);text-align:right;padding:11px 12px;border-bottom:1px solid var(--rule);
+     position:sticky;top:0;background:var(--panel);white-space:nowrap}
+  th.l,td.l{text-align:left}
+  td{padding:8px 12px;text-align:right;border-bottom:1px solid color-mix(in srgb,var(--rule) 55%,transparent);
+     font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+  tr.r{cursor:pointer}
+  tr.r:hover td,tr.r.hi td{background:var(--sunk)}
+  td.name{font-family:var(--sans);font-size:13.5px;max-width:none}
+  .move{font-family:var(--mono);font-size:11.5px}
+  .move.u{color:var(--up)} .move.d{color:var(--down)} .move.z{color:var(--faint)}
+  tr.det td{background:var(--sunk);text-align:left;font-family:var(--sans);
+            font-size:13px;padding:15px 16px 17px;white-space:normal}
+  .det dl{display:grid;grid-template-columns:auto 1fr;gap:3px 16px;margin:0 0 12px;
+          font-family:var(--mono);font-size:11.5px}
+  .det dt{color:var(--muted)} .det dd{margin:0;color:var(--ink)}
+  .curve{background:var(--panel);border:1px solid var(--rule);border-radius:3px;max-width:620px}
+
+  ul{max-width:66ch;padding-left:19px;margin:0 0 14px}
+  li{margin:0 0 7px}
+  .note{font-family:var(--mono);font-size:12px;line-height:1.85;color:var(--muted);
+        border-left:2px solid var(--warn);padding:3px 0 3px 15px;margin:20px 0;max-width:74ch}
+  .cross{font-family:var(--mono);font-size:11.5px;color:var(--muted);margin:12px 0 0}
+  .cross b{color:var(--up);font-weight:600}
+  .cross b.bad{color:var(--down)}
+  footer{margin-top:70px;padding-top:20px;border-top:1px solid var(--rule);
+         font-family:var(--mono);font-size:11.5px;color:var(--muted);line-height:1.95}
+  @media (max-width:640px){
+    .ctrl{grid-template-columns:1fr;position:static}
+    h1{font-size:2.9rem}
+  }
+</style>
+
+<div class="wrap">
+  <p class="kick">technocore-scan &middot; live measurement</p>
+
+  <h1>Dollars per<br><em>PetaFLOP</em></h1>
+
+  <p class="dek">Every inference API sells you <b>tokens</b>. None of them sells you the thing
+  a token is a receipt for, which is <b>arithmetic</b>. This page divides one by the other,
+  for every open-weight model on OpenRouter whose architecture is published.</p>
+
+  <p class="dek">Prices are fetched live, from the same public endpoint your client would use.
+  The arithmetic is counted from each model's own <code>config.json</code>. Nothing here is
+  measured on a GPU, and the page says so twice more before it is done.</p>
+
+  <div class="ctrl">
+    <div class="row">
+      <span class="lab">Context</span>
+      <input type="range" id="slider" min="0" max="1000" value="520"
+             aria-label="Context length in tokens">
+      <span class="ctxval" id="ctxval">&mdash;</span>
+    </div>
+    <div class="row">
+      <span class="lab">Token</span>
+      <div class="chips" role="group" aria-label="Which token to price">
+        <button class="chip" id="sideOut" aria-pressed="true">generated</button>
+        <button class="chip" id="sideIn" aria-pressed="false">prompt</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats" id="stats">
+    <div class="stat"><span class="n">&hellip;</span><span class="k">loading live prices</span></div>
+  </div>
+
+  <h2>The same models, ranked twice</h2>
+  <p>Left: cheapest per token, the ranking every price page publishes. Right: cheapest per unit
+  of arithmetic, at the context length above. A line that climbs is a model that buys you more
+  computation than its sticker price suggests; a line that falls is one that buys you less.
+  Drag the slider and watch the braid re-tie itself &mdash; that movement is the whole argument.</p>
+
+  <figure>
+    <div class="scroller"><svg id="braid" class="braid" role="img"
+      aria-label="Slope chart connecting each model's rank by price per token to its rank by price per petaFLOP"></svg></div>
+    <div class="readout" id="readout"><span class="dim">Hover a line, or a row in the table below.</span></div>
+    <figcaption id="cap"></figcaption>
+  </figure>
+
+  <h2>Every model this page can count</h2>
+  <p class="sub">Click a row for the derivation, the coefficients, and a link to the config
+  the numbers came from.</p>
+
+  <div class="tablewrap">
+    <table id="tbl">
+      <thead><tr>
+        <th class="l">#</th><th class="l">model</th>
+        <th>$/Mtok</th><th>GFLOP/tok</th><th>active B</th><th>$/PFLOP</th><th>move</th>
+      </tr></thead>
+      <tbody id="tb"></tbody>
+    </table>
+  </div>
+  <p class="cross" id="cross"></p>
+
+  <h2>What this counts</h2>
+  <p>One forward pass, with a multiply-accumulate counted as 2 FLOPs &mdash; the convention the
+  scaling-law papers use. Every model reduces to three coefficients, and both this page and
+  <a href="https://github.com/wattsap-dev/technocore-scan/blob/main/tools/flops.py">tools/flops.py</a>
+  evaluate the same closed form:</p>
+
+  <p class="note">FLOPs(s) = A + B_full &middot; s + B_swa &middot; min(s, W)<br><br>
+  A&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;attention projections, the MLP or the experts a token<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;actually activates, and the LM head<br>
+  B_full&nbsp;&nbsp;attention score and value matmuls, per token of context<br>
+  B_swa&nbsp;&nbsp;&nbsp;the same in sliding-window layers, which stop at W</p>
+
+  <p>A prompt token is priced at <code>A &minus; lm_head</code>, because prefill only needs logits
+  for the last position. A generated token is priced at the full <code>A</code>. Mixture-of-experts
+  models are charged for the experts a token routes to, not for the experts that sit idle
+  &mdash; which is why a repository named <code>120b</code> can appear here at five billion
+  active parameters.</p>
+
+  <p>The slider means <b>tokens of context in front of this one token</b>, so both modes give a
+  marginal cost at that depth, not an average over a request. Prefilling a prompt of that length
+  costs about half this per token, because the early tokens have almost nothing to attend to.
+  Generating deep into a long answer costs more than this, for the same reason in reverse.</p>
+
+  <h2>What this does not count</h2>
+  <ul>
+    <li><b>Time, energy, or a GPU.</b> Decode is usually bound by memory bandwidth, not by
+      arithmetic. Two models with identical FLOP counts can differ several-fold in what they
+      cost a provider to run.</li>
+    <li><b>Everything that is not a matmul</b> &mdash; softmax, normalisation, activations,
+      rotary embeddings. Small, but not zero.</li>
+    <li><b>Prompt caching, batching, speculative decoding, quantisation.</b> All of them change
+      the provider's cost and none of them change this count.</li>
+    <li><b>The provider's margin</b>, which is not public and is not derivable from either source
+      this page reads.</li>
+  </ul>
+  <p>So: this is the arithmetic a request implies, not the cost of serving it. It is a floor
+  and a unit, not a bill.</p>
+
+  <h2>What it will not guess at</h2>
+  <p id="skip" class="sub"></p>
+  <p>Hybrid attention, Mamba blocks, sparse indexers and the newer latent-attention variants
+  each need their own accounting, and a wrong formula quietly produces a plausible number.
+  Those architectures are listed as unmodelled rather than approximated. Gated repositories
+  &mdash; Llama, Gemma, Command &mdash; return 401 without credentials, so they are absent
+  too. This page would rather be short than confident.</p>
+
+  <h2>Why this page exists</h2>
+  <p>On 8 September 2026 <a href="https://x.com/flop_labs/status/2097286156228694246">Flop Labs</a>
+  amplified <a href="https://x.com/some_one_else/status/2097252724916277576">a post</a> making a
+  one-line claim: <q>compute is a better measure of AI work than tokens</q>. It is an easy claim
+  to agree with and a slightly annoying one to check, because checking it means going and getting
+  both numbers. Here they are, together, recomputed every time this page loads.</p>
+
+  <footer>
+    Read-only. Two public sources, no key and no account:
+    <a href="https://openrouter.ai/api/v1/models">openrouter.ai/api/v1/models</a> for price,
+    <span class="mono">huggingface.co/&lt;repo&gt;/config.json</span> for architecture.<br>
+    <a href="https://github.com/wattsap-dev/technocore-scan">Source, the tool, and every correction</a>
+    &nbsp;&middot;&nbsp; <a href="roll-call.html">Roll Call</a>
+    &nbsp;&middot;&nbsp; <a href="index.html">technocore-scan</a>
+  </footer>
+</div>
+
+<script>
+"use strict";
+const ARCH_URL = "data/arch.json";
+const PRICE_URL = "https://openrouter.ai/api/v1/models";
+// Past 262k only a couple of these models are sold at all, and a chart of two
+// models is not a chart. The population, not the architecture, sets this ceiling.
+const CTX_MIN = 256, CTX_MAX = 262144;
+
+let ARCH = null, PRICES = null, ROWS = [], openRepo = null;
+let ctx = 8000, side = "completion";
+
+const $ = id => document.getElementById(id);
+const fmt = (n, d) => n.toLocaleString("en-US", {minimumFractionDigits: d||0, maximumFractionDigits: d||0});
+
+function niceCtx(v){
+  const raw = Math.exp(Math.log(CTX_MIN) + (v/1000)*(Math.log(CTX_MAX)-Math.log(CTX_MIN)));
+  const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const step = mag/4;
+  return Math.max(CTX_MIN, Math.round(raw/step)*step);
+}
+function ctxToSlider(c){
+  return Math.round(1000*(Math.log(c)-Math.log(CTX_MIN))/(Math.log(CTX_MAX)-Math.log(CTX_MIN)));
+}
+
+/* The one formula. tools/flops.py evaluates the same expression on the same
+   coefficients, and the cross-check line under the table reports whether the
+   two agreed on every architecture when this page loaded. */
+function flops(a, s, forPrompt){
+  const base = forPrompt ? a.A - a.lm_head : a.A;
+  return base + a.B_full*s + a.B_swa*Math.min(s, a.W || 0);
+}
+
+/* OpenRouter can attach a higher tariff above a prompt-length threshold. Take
+   the highest threshold this context actually crosses, not the headline price. */
+function priceOf(m, which, s){
+  let p = parseFloat(m.pricing[which]);
+  let best = -1;
+  for (const o of (m.pricing.overrides || [])){
+    const t = o.min_prompt_tokens || 0;
+    if (t <= s && t > best && o[which] != null){ best = t; p = parseFloat(o[which]); }
+  }
+  return p;
+}
+
+function build(){
+  const forPrompt = side === "prompt";
+  const rows = [];
+  for (const repo in ARCH.modelled){
+    const a = ARCH.modelled[repo];
+    for (const id of a.openrouter_ids){
+      const m = PRICES[id];
+      if (!m) continue;
+      if ((m.context_length || 0) < ctx) continue;      // never extrapolate past the provider
+      const p = priceOf(m, forPrompt ? "prompt" : "completion", ctx);
+      if (!(p > 0)) continue;
+      const f = flops(a, ctx, forPrompt);
+      rows.push({id, repo, a, m, usdTok: p, gflop: f/1e9,
+                 usdPflop: p/f*1e15, maxCtx: m.context_length});
+    }
+  }
+  const byTok = rows.slice().sort((x,y) => x.usdTok - y.usdTok);
+  byTok.forEach((r,i) => r.rankTok = i+1);
+  rows.sort((x,y) => x.usdPflop - y.usdPflop);
+  rows.forEach((r,i) => { r.rankFlop = i+1; r.move = r.rankTok - r.rankFlop; });
+  ROWS = rows;
+}
+
+function renderStats(){
+  const n = ROWS.length, s = $("stats");
+  if (!n){
+    s.innerHTML = '<div class="stat"><span class="n">0</span><span class="k">models are offered at this'
+      + ' context length. Drag the slider down.</span></div>';
+    return;
+  }
+  const spread = ROWS[n-1].usdPflop / ROWS[0].usdPflop;
+  const tokSpread = Math.max(...ROWS.map(r=>r.usdTok)) / Math.min(...ROWS.map(r=>r.usdTok));
+  const moved = ROWS.filter(r => Math.abs(r.move) > n*0.25).length;
+  const grow = ROWS.map(r => flops(r.a, ctx, side==="prompt") / (side==="prompt" ? r.a.A-r.a.lm_head : r.a.A));
+  const worst = Math.max(...grow);
+  s.innerHTML = [
+    ['&times;' + fmt(spread), 'spread in price per petaFLOP, across ' + n + ' priced models.<br>Per token the spread is only &times;' + fmt(tokSpread) + '.'],
+    [fmt(moved) + ' of ' + n, 'models move more than a quarter of the table<br>between the two rankings'],
+    ['&times;' + worst.toFixed(1), 'most arithmetic any of them spends on one token<br>at this context, versus at no context, for one flat price']
+  ].map(([a,b]) => '<div class="stat"><span class="n">'+a+'</span><span class="k">'+b+'</span></div>').join("");
+}
+
+const COL = {up:'var(--up)', down:'var(--down)', flat:'var(--faint)'};
+
+function renderBraid(){
+  const svg = $("braid"), n = ROWS.length;
+  svg.innerHTML = "";
+  if (!n) return;
+  const W = 1000, top = 44, H = 460, span = H - top - 26;
+  const pitch = n > 1 ? span/(n-1) : 0;
+  const xl = 196, xr = 636;   // the right column keeps 350px clear for its labels
+  svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+  const ns = "http://www.w3.org/2000/svg";
+  const mk = (t, at, txt) => {
+    const e = document.createElementNS(ns, t);
+    for (const k in at) e.setAttribute(k, at[k]);
+    if (txt != null) e.textContent = txt;
+    return e;
+  };
+  const y = rank => top + (rank-1)*pitch;
+
+  svg.appendChild(mk("text", {x:xl, y:24, "text-anchor":"end", class:"axcap",
+    fill:"var(--muted)"}, "cheapest per token"));
+  svg.appendChild(mk("text", {x:xr, y:24, "text-anchor":"start", class:"axcap",
+    fill:"var(--accent)"}, "cheapest per petaFLOP"));
+  svg.appendChild(mk("line", {x1:xl, y1:top-10, x2:xl, y2:top+span+10,
+    stroke:"var(--rule)", "stroke-width":1}));
+  svg.appendChild(mk("line", {x1:xr, y1:top-10, x2:xr, y2:top+span+10,
+    stroke:"var(--rule)", "stroke-width":1}));
+
+  ROWS.forEach(r => {
+    const g = mk("g", {class:"ln", "data-id":r.id});
+    const dir = r.move > n*0.06 ? "up" : (r.move < -n*0.06 ? "down" : "flat");
+    const op = dir === "flat" ? 0.24 : Math.min(0.85, 0.3 + Math.abs(r.move)/n);
+    g.appendChild(mk("line", {x1:xl, y1:y(r.rankTok), x2:xr, y2:y(r.rankFlop),
+      stroke:COL[dir], "stroke-width":1.35, opacity:op}));
+    g.appendChild(mk("circle", {cx:xl, cy:y(r.rankTok), r:2, fill:COL[dir], opacity:op}));
+    g.appendChild(mk("circle", {cx:xr, cy:y(r.rankFlop), r:2, fill:COL[dir], opacity:op}));
+    g.appendChild(mk("title", {}, r.id + " — #" + r.rankTok + " by token, #" + r.rankFlop + " by petaFLOP"));
+    g.addEventListener("mouseenter", () => hover(r));
+    g.addEventListener("click", () => toggleDetail(r.repo));
+    svg.appendChild(g);
+  });
+
+  // Name only the largest moves in each direction; the table names them all.
+  // Labels are pushed apart where ranks crowd, with a leader line back to the
+  // point they belong to, so a dense middle stays readable.
+  const ups = ROWS.filter(r=>r.move>0).sort((a,b)=>b.move-a.move).slice(0,4);
+  const dns = ROWS.filter(r=>r.move<0).sort((a,b)=>a.move-b.move).slice(0,4);
+  const labs = ups.concat(dns)
+    .map(r => ({r, at:y(r.rankFlop), y:y(r.rankFlop), up:r.move>0}))
+    .sort((a,b) => a.at - b.at);
+  const GAP = 13;
+  for (let i = 1; i < labs.length; i++)
+    if (labs[i].y - labs[i-1].y < GAP) labs[i].y = labs[i-1].y + GAP;
+  const overflow = labs.length ? labs[labs.length-1].y - (top + span) : 0;
+  if (overflow > 0) labs.forEach(l => l.y -= overflow);
+  labs.forEach(l => {
+    const col = l.up ? "var(--up)" : "var(--down)";
+    if (Math.abs(l.y - l.at) > 1.5)
+      svg.appendChild(mk("path", {d:"M"+(xr+3)+" "+l.at+" L"+(xr+11)+" "+l.y,
+        stroke:col, fill:"none", "stroke-width":.8, opacity:.55}));
+    svg.appendChild(mk("text", {x:xr+15, y:l.y+3.2, class:"tick", fill:col},
+      l.r.id.split("/").pop().slice(0,28) + (l.up ? "  ▲" : "  ▼") + Math.abs(l.r.move)));
+  });
+  $("cap").innerHTML = "All " + n + " priced models drawn. Colour is direction of movement; "
+    + "the eight largest moves are named on the right. Lines that stay level are models whose "
+    + "token price already reflected the work behind it.";
+}
+
+function hover(r){
+  $("readout").innerHTML = "<b>" + r.id + "</b> &nbsp; $" + (r.usdTok*1e6).toFixed(3)
+    + "/Mtok &nbsp; " + r.gflop.toFixed(1) + " GFLOP per token &nbsp; $"
+    + r.usdPflop.toPrecision(3) + " per petaFLOP &nbsp; <span class='dim'>#"
+    + r.rankTok + " by token &rarr; #" + r.rankFlop + " by compute</span>";
+  document.querySelectorAll("tr.r.hi").forEach(t => t.classList.remove("hi"));
+  const tr = document.querySelector('tr.r[data-id="' + CSS.escape(r.id) + '"]');
+  if (tr) tr.classList.add("hi");
+}
+
+function moveCell(r, n){
+  if (Math.abs(r.move) <= n*0.06) return '<span class="move z">&mdash;</span>';
+  const up = r.move > 0;
+  return '<span class="move ' + (up?"u":"d") + '">' + (up?"▲":"▼")
+    + " " + Math.abs(r.move) + "</span>";
+}
+
+function detailRow(r){
+  const a = r.a, forPrompt = side === "prompt";
+  const pts = [];
+  const hi = Math.max(4096, r.maxCtx);
+  for (let i = 0; i <= 60; i++){
+    const s = Math.exp(Math.log(256) + (i/60)*(Math.log(hi)-Math.log(256)));
+    pts.push([s, flops(a, s, forPrompt)/1e9]);
+  }
+  const maxY = pts[pts.length-1][1], W = 600, H = 150, pad = 30;
+  const px = s => pad + (Math.log(s)-Math.log(256))/(Math.log(hi)-Math.log(256))*(W-pad-14);
+  const py = v => H-24 - (v/maxY)*(H-24-12);
+  const d = pts.map((p,i) => (i?"L":"M") + px(p[0]).toFixed(1) + " " + py(p[1]).toFixed(1)).join(" ");
+  const marks = [1000, 32000, 128000, 1000000].filter(s => s <= hi);
+  const ticks = marks.map(s =>
+      '<line x1="'+px(s)+'" y1="12" x2="'+px(s)+'" y2="'+(H-24)+'" stroke="var(--rule)"/>'
+    + '<text x="'+px(s)+'" y="'+(H-9)+'" text-anchor="middle" font-size="9" '
+    + 'font-family="var(--mono)" fill="var(--faint)">'+(s>=1000?(s/1000)+"k":s)+'</text>').join("");
+  const now = ctx <= hi ? '<line x1="'+px(ctx)+'" y1="8" x2="'+px(ctx)+'" y2="'+(H-24)
+    + '" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="3 3"/>' : "";
+
+  return '<dl>'
+    + '<dt>architecture</dt><dd>' + a.model_type + '</dd>'
+    + '<dt>attention</dt><dd>' + a.attention + '</dd>'
+    + '<dt>feed-forward</dt><dd>' + a.mlp + '</dd>'
+    + '<dt>layers</dt><dd>' + a.full_attn_layers + ' full-attention, ' + a.swa_layers
+      + ' sliding' + (a.W ? ' (window ' + fmt(a.W) + ')' : '') + '</dd>'
+    + '<dt>A</dt><dd>' + a.A.toExponential(3) + ' FLOP &nbsp; <span style="color:var(--muted)">'
+      + '(' + (a.active_params_derived/1e9).toFixed(2) + 'B active parameters &times; 2)</span></dd>'
+    + '<dt>B_full</dt><dd>' + a.B_full.toExponential(3) + ' FLOP per token of context</dd>'
+    + '<dt>B_swa</dt><dd>' + (a.B_swa ? a.B_swa.toExponential(3) + ' FLOP, capped at ' + fmt(a.W)
+      : '0 — every layer attends to the whole context') + '</dd>'
+    + '<dt>at ' + fmt(ctx) + '</dt><dd>' + r.gflop.toFixed(1) + ' GFLOP per token, '
+      + (r.gflop*1e9/(forPrompt ? a.A-a.lm_head : a.A)).toFixed(1) + '&times; its context-free cost</dd>'
+    + '<dt>config</dt><dd><a href="' + a.config_url + '">' + a.repo + '/config.json</a></dd>'
+    + '</dl>'
+    + '<svg class="curve" viewBox="0 0 '+W+' '+H+'" width="100%" role="img" aria-label="GFLOP per token against context length">'
+    + ticks + '<path d="'+d+'" fill="none" stroke="var(--accent)" stroke-width="2"/>' + now
+    + '<text x="'+pad+'" y="10" font-size="9" font-family="var(--mono)" fill="var(--faint)">'
+    + maxY.toFixed(0) + ' GFLOP/token at ' + fmt(hi) + ' context</text></svg>';
+}
+
+function renderTable(){
+  const tb = $("tb"), n = ROWS.length;
+  tb.innerHTML = "";
+  ROWS.forEach(r => {
+    const tr = document.createElement("tr");
+    tr.className = "r";
+    tr.dataset.id = r.id;
+    tr.innerHTML = '<td class="l">' + r.rankFlop + '</td>'
+      + '<td class="l name">' + r.id + '</td>'
+      + '<td>' + (r.usdTok*1e6).toFixed(3) + '</td>'
+      + '<td>' + r.gflop.toFixed(1) + '</td>'
+      + '<td>' + (r.a.active_params_derived/1e9).toFixed(1) + '</td>'
+      + '<td>' + r.usdPflop.toPrecision(3) + '</td>'
+      + '<td>' + moveCell(r, n) + '</td>';
+    tr.addEventListener("mouseenter", () => hover(r));
+    tr.addEventListener("click", () => toggleDetail(r.repo));
+    tb.appendChild(tr);
+    if (openRepo === r.repo){
+      const d = document.createElement("tr");
+      d.className = "det";
+      d.innerHTML = '<td colspan="7">' + detailRow(r) + '</td>';
+      tb.appendChild(d);
+    }
+  });
+}
+
+function toggleDetail(repo){
+  openRepo = (openRepo === repo) ? null : repo;
+  renderTable();
+}
+
+function crossCheck(){
+  let n = 0, bad = [];
+  for (const repo in ARCH.modelled){
+    const a = ARCH.modelled[repo];
+    for (const s in (a.check || {})){
+      n++;
+      if (Math.abs(flops(a, +s, false) - a.check[s]) > 1) bad.push(repo + " @ " + s);
+    }
+  }
+  $("cross").innerHTML = bad.length
+    ? 'Cross-check: <b class="bad">' + bad.length + ' of ' + n + ' sample points disagree</b> '
+      + 'with tools/flops.py. Do not quote this page until that is fixed. ' + bad.slice(0,3).join(", ")
+    : 'Cross-check: this page and <span class="mono">tools/flops.py</span> agree on all <b>'
+      + n + '</b> sample points across <b>' + Object.keys(ARCH.modelled).length
+      + '</b> architectures. Same coefficients, same closed form, two implementations.';
+}
+
+function render(){
+  $("ctxval").textContent = fmt(ctx);
+  build();
+  renderStats();
+  renderBraid();
+  renderTable();
+}
+
+function wire(){
+  const sl = $("slider");
+  sl.value = ctxToSlider(ctx);
+  sl.addEventListener("input", () => { ctx = niceCtx(+sl.value); render(); });
+  $("sideOut").addEventListener("click", () => setSide("completion"));
+  $("sideIn").addEventListener("click", () => setSide("prompt"));
+}
+function setSide(s){
+  side = s;
+  $("sideOut").setAttribute("aria-pressed", String(s === "completion"));
+  $("sideIn").setAttribute("aria-pressed", String(s === "prompt"));
+  render();
+}
+
+Promise.all([
+  fetch(ARCH_URL).then(r => r.json()),
+  fetch(PRICE_URL).then(r => r.json())
+]).then(([arch, price]) => {
+  ARCH = arch;
+  PRICES = {};
+  for (const m of price.data) PRICES[m.id] = m;
+  const skipped = Object.keys(ARCH.not_modelled || {}).length;
+  const fams = new Set(Object.values(ARCH.not_modelled || {}));
+  $("skip").innerHTML = skipped + " of the " + (skipped + Object.keys(ARCH.modelled).length)
+    + " published architectures on OpenRouter are left out, across " + fams.size
+    + " model families this file has no formula for.";
+  crossCheck();
+  wire();
+  render();
+}).catch(e => {
+  $("stats").innerHTML = '<div class="stat"><span class="n">&mdash;</span><span class="k">'
+    + 'Could not reach one of the two sources. Price comes from openrouter.ai and needs the '
+    + 'network; nothing is cached. (' + String(e).slice(0,90) + ')</span></div>';
+});
+</script>

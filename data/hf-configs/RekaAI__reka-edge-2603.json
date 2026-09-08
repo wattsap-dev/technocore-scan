@@ -1,0 +1,83 @@
+{
+  "apply_patch_attention_mask": false,
+  "architectures": [
+    "Yasa2ForConditionalGeneration"
+  ],
+  "auto_map": {
+    "AutoConfig": "configuration_yasa2.Yasa2Config",
+    "AutoModel": "modeling_yasa2.Yasa2Model",
+    "AutoModelForImageTextToText": "modeling_yasa2.Yasa2ForConditionalGeneration"
+  },
+  "dtype": "bfloat16",
+  "image_token_id": 100278,
+  "label_ignore_index": 100257,
+  "model_type": "yasa2",
+  "num_query_tokens": 64,
+  "text_config": {
+    "add_position_embedding": false,
+    "architectures": [
+      "YasaCausalLM"
+    ],
+    "attention_bias": false,
+    "attention_dropout": 0.0,
+    "dtype": "bfloat16",
+    "head_dim": 128,
+    "hidden_act": "silu",
+    "hidden_size": 4096,
+    "initializer_range": 0.02,
+    "intermediate_size": 10880,
+    "layer_norm_eps": 1e-05,
+    "linear_no_bias": true,
+    "max_position_embeddings": 16384,
+    "mlp_bias": false,
+    "model_architecture": "decoder_only",
+    "model_type": "yasa_model",
+    "naming_convention": "language_model",
+    "normalization": "RMSNorm",
+    "num_attention_heads": 32,
+    "num_hidden_layers": 32,
+    "num_key_value_heads": 8,
+    "num_query_groups": 8,
+    "pretraining_tp": 1,
+    "rms_norm_eps": 1e-05,
+    "rope_scaling": {
+      "rope_type": "yarn",
+      "factor": 2.0,
+      "original_max_position_embeddings": 8192
+    },
+    "rope_theta": 10000,
+    "transformer_impl": "transformer_engine",
+    "use_cache": true,
+    "use_parallel_residual": false,
+    "vocab_size": 100352,
+    "partial_rotary_factor": 1.0
+  },
+  "transformers_version": "4.57.3",
+  "use_vision_pos_embed": true,
+  "vision_config": {
+    "depths": [
+      3,
+      3,
+      27,
+      3
+    ],
+    "drop_path_rate": 0.0,
+    "hidden_act": "gelu",
+    "hidden_size": 2816,
+    "hidden_sizes": [
+      352,
+      704,
+      1408,
+      2816
+    ],
+    "image_size": 512,
+    "initializer_range": 0.02,
+    "layer_norm_eps": 1e-12,
+    "layer_scale_init_value": 0,
+    "model_type": "convnext",
+    "num_channels": 3,
+    "patch_size": 4,
+    "use_grn": true
+  },
+  "vision_pooling": "adaptive_avg"
+}

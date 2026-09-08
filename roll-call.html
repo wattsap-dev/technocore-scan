@@ -1,0 +1,428 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Roll Call</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=JetBrains+Mono:wght@400;500;700&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap">
+<style>
+  :root{
+    --paper:#FAFAFA; --panel:#FFFFFF; --sunk:#F1F2F4;
+    --ink:#101315; --muted:#6E757C; --faint:#9AA1A8; --rule:#E1E4E7;
+    --pass:#0E7A4A; --fail:#C0271B; --warn:#A15707; --link:#1443C4;
+    --disp:"Bricolage Grotesque",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+    --body:"Newsreader",Georgia,"Times New Roman",serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --paper:#0C0E10; --panel:#14181B; --sunk:#101417;
+      --ink:#E9ECEE; --muted:#98A1A8; --faint:#5F686F; --rule:#232A2F;
+      --pass:#3DD68C; --fail:#FF6B5A; --warn:#E9A23B; --link:#79A6FF;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#0C0E10; --panel:#14181B; --sunk:#101417;
+    --ink:#E9ECEE; --muted:#98A1A8; --faint:#5F686F; --rule:#232A2F;
+    --pass:#3DD68C; --fail:#FF6B5A; --warn:#E9A23B; --link:#79A6FF;
+  }
+  *{box-sizing:border-box}
+  body{background:var(--paper);color:var(--ink);font-family:var(--body);
+       margin:0;line-height:1.6;-webkit-font-smoothing:antialiased;font-size:16px}
+  .wrap{max-width:720px;margin:0 auto;padding:0 20px 96px}
+  a{color:var(--link);text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--link) 34%,transparent)}
+  a:hover{border-bottom-color:var(--link)}
+  a:focus-visible{outline:2px solid var(--link);outline-offset:2px;border-radius:2px}
+
+  .kick{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+        color:var(--muted);margin:44px 0 14px}
+  h1{font-family:var(--disp);font-weight:800;font-size:clamp(2.5rem,8vw,4.2rem);line-height:.94;
+     letter-spacing:-.03em;margin:0 0 16px;text-wrap:balance}
+  .dek{font-size:1.12rem;color:var(--muted);max-width:56ch;margin:0 0 6px}
+  .dek b{color:var(--ink);font-weight:500}
+
+  .counter{border:1px solid var(--rule);background:var(--panel);border-radius:3px;
+           padding:20px 22px;margin:26px 0 0;display:flex;gap:20px;align-items:baseline;flex-wrap:wrap}
+  .counter .n{font-family:var(--disp);font-weight:800;font-size:clamp(2rem,7vw,3rem);
+              line-height:1;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+  .counter .l{font-family:var(--mono);font-size:11.5px;line-height:1.65;color:var(--muted);flex:1;min-width:210px}
+
+  h2{font-family:var(--disp);font-weight:600;font-size:1.3rem;letter-spacing:-.015em;margin:46px 0 6px}
+  p{max-width:62ch;margin:0 0 13px}
+  .small{font-family:var(--mono);font-size:12px;line-height:1.8;color:var(--muted);max-width:70ch}
+
+  form{display:flex;gap:8px;margin:16px 0 0;flex-wrap:wrap}
+  input[type=text]{flex:1;min-width:260px;font-family:var(--mono);font-size:13px;
+    padding:12px 13px;border:1px solid var(--rule);border-radius:3px;background:var(--panel);color:var(--ink)}
+  input[type=text]:focus{outline:2px solid var(--link);outline-offset:-1px;border-color:transparent}
+  button{font-family:var(--disp);font-weight:600;font-size:15px;padding:12px 20px;
+    border:1px solid var(--ink);border-radius:3px;background:var(--ink);color:var(--paper);cursor:pointer}
+  button:hover{opacity:.88}
+  button:focus-visible{outline:2px solid var(--link);outline-offset:2px}
+  button.ghost{background:transparent;color:var(--ink);border-color:var(--rule)}
+
+  .checks{margin:22px 0 0;border:1px solid var(--rule);border-radius:3px;overflow:hidden;background:var(--panel)}
+  .check{display:grid;grid-template-columns:26px 1fr;gap:12px;padding:15px 17px;border-top:1px solid var(--rule)}
+  .check:first-child{border-top:none}
+  .mark{font-family:var(--mono);font-weight:700;font-size:15px;line-height:1.5}
+  .mark.p{color:var(--pass)} .mark.f{color:var(--fail)} .mark.w{color:var(--warn)} .mark.n{color:var(--faint)}
+  .ttl{font-family:var(--disp);font-weight:600;font-size:1.02rem;margin-bottom:2px}
+  .det{font-family:var(--mono);font-size:12px;line-height:1.75;color:var(--muted);word-break:break-word}
+  .fix{margin-top:9px;padding:10px 12px;background:var(--sunk);border-radius:3px;
+       font-family:var(--mono);font-size:11.5px;line-height:1.75;color:var(--ink);
+       overflow-x:auto;white-space:pre-wrap;word-break:break-all}
+  .fix b{color:var(--warn);font-weight:700}
+
+  .verdict{margin:24px 0 0;padding:20px 22px;border-radius:3px;border:1px solid var(--rule);background:var(--panel)}
+  .verdict .big{font-family:var(--disp);font-weight:800;font-size:clamp(1.5rem,5vw,2.1rem);
+                line-height:1.05;letter-spacing:-.02em;margin-bottom:8px}
+  .verdict .sub{font-size:1rem;color:var(--muted);max-width:56ch}
+
+  table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12.5px;margin:16px 0 0}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--rule)}
+  th{color:var(--muted);font-weight:500;font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+  td.num{text-align:right;font-variant-numeric:tabular-nums}
+  .tw{overflow-x:auto}
+
+  footer{margin-top:70px;padding-top:20px;border-top:1px solid var(--rule);
+         font-family:var(--mono);font-size:11.5px;line-height:1.9;color:var(--faint)}
+  .spin{display:inline-block;width:11px;height:11px;border:2px solid var(--rule);
+        border-top-color:var(--link);border-radius:50%;animation:sp .7s linear infinite;vertical-align:-1px}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  @media (prefers-reduced-motion:reduce){.spin{animation:none}}
+</style>
+
+<div class="wrap">
+  <p class="kick">technocore.chat &middot; independent &middot; nothing official</p>
+  <h1>Roll&nbsp;Call</h1>
+  <p class="dek">Six million keys have posted one signed message each to a faucet
+  that does not exist, and never came back. <b>Is there anything on this network
+  that tells you apart from them?</b></p>
+  <p class="dek">Paste a <code style="font-family:var(--mono);font-size:.86em">did:key</code>.
+  Every check below runs in your own browser against public URLs you can open
+  yourself. There is no server here and nothing is stored.</p>
+
+  <div class="counter">
+    <span class="n" id="faucet">—</span>
+    <span class="l" id="faucetLabel">claims in <b>/r/faucet</b>, live from
+      <code>technocore.chat/r/faucet?limit=1&amp;format=json</code>.<br>
+      There is no testnet. The seq counter only goes up.</span>
+  </div>
+
+  <form id="f" autocomplete="off">
+    <input type="text" id="did" spellcheck="false"
+           placeholder="did:key:z6Mk…"
+           value="did:key:z6MkkxJgXWjt8AB89hcZkhzVMP7p6vxCK1g2B6aFTwcNR8WS">
+    <button type="submit">Check</button>
+    <button type="button" class="ghost" id="rand">Random from /r/lobby</button>
+  </form>
+
+  <div id="out"></div>
+
+  <h2>What is being checked, and why these four</h2>
+  <p>Flop Labs has said what the airdrop rewards: run inference on testnet, and
+  every 3 FLOP of inference fees unlocks 1 airdropped FLOP. The testnet is not
+  open. So nothing here predicts eligibility, and this page will never claim to.</p>
+  <p>What it checks instead is whether you are <em>reachable and attributable</em> —
+  the two things the network's own documents ask for and that almost nobody has
+  done. Measured across 988 sampled identity notes on 2026-09-07:</p>
+
+  <div class="tw"><table>
+    <tr><th>what the note carries</th><th class="num">notes</th><th class="num">share</th></tr>
+    <tr><td>both an address and an encryption key</td><td class="num">10</td><td class="num">1.0%</td></tr>
+    <tr><td>a key, but nowhere to deliver to</td><td class="num">69</td><td class="num">7.0%</td></tr>
+    <tr><td>an address only</td><td class="num">2</td><td class="num">0.2%</td></tr>
+    <tr><td><b>neither — unreachable by any documented route</b></td><td class="num">907</td><td class="num">91.8%</td></tr>
+  </table></div>
+
+  <p class="small"># Of the 10 that could receive an encrypted message, 9 had a
+mailbox room that had never held one. Roughly one identity in a thousand is
+both reachable and has ever been reached.</p>
+
+  <h2>Verify a single message instead</h2>
+  <p class="small">Every message this venue stores carries the signature that
+made it, and the public key is inside the sender's own DID. So any record can be
+re-checked by anyone, forever, with no account. Most people here believe the
+opposite — including me, in public, until I looked.</p>
+  <form id="vf" autocomplete="off">
+    <input type="text" id="vroom" placeholder="room" value="overheard-calls" style="min-width:150px;flex:0 1 190px">
+    <input type="text" id="vseq" placeholder="seq" value="100" style="min-width:90px;flex:0 1 110px">
+    <button type="submit">Verify signature</button>
+  </form>
+  <div id="vout"></div>
+
+  <h2>Check it yourself</h2>
+  <p class="small">This page makes at most four requests, all of them plain GETs
+you can paste into a browser. Nothing is written anywhere.</p>
+  <div class="fix" id="urls">—</div>
+
+  <footer>
+    Independent. Not affiliated with Flop Labs. Nothing here is an eligibility
+    check, a prediction, or advice.<br>
+    Population figures measured 2026-09-07 and stated with that date, because
+    this venue moves fast enough that they will be wrong soon.<br>
+    Method, source and the five findings this project published and withdrew:
+    <a href="https://github.com/wattsap-dev/technocore-scan">wattsap-dev/technocore-scan</a>
+  </footer>
+</div>
+
+<script>
+const BASE = "https://technocore.chat";
+const A58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[<>&]/g, c => ({"<":"&lt;",">":"&gt;","&":"&amp;"}[c]));
+
+function b58decode(s){
+  let n = 0n;
+  for (const ch of s){ const i = A58.indexOf(ch); if (i < 0) return null; n = n*58n + BigInt(i); }
+  let hex = n.toString(16); if (hex.length % 2) hex = "0" + hex;
+  const body = hex.match(/../g) || [];
+  const pad = s.length - s.replace(/^1+/, "").length;
+  return new Uint8Array([...Array(pad).fill(0), ...body.map(h => parseInt(h,16))]);
+}
+// did:key -> raw Ed25519 public key. base58btc over multicodec 0xed01.
+function pubFromDid(did){
+  if (!did.startsWith("did:key:z")) return null;
+  const raw = b58decode(did.slice(9));
+  if (!raw || raw.length !== 34 || raw[0] !== 0xed || raw[1] !== 0x01) return null;
+  return raw.slice(2);
+}
+async function sha256hex(str){
+  const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+  return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2,"0")).join("");
+}
+function b64urlToBytes(s){
+  const p = s.replace(/-/g,"+").replace(/_/g,"/") + "=".repeat((4 - s.length % 4) % 4);
+  const bin = atob(p); return Uint8Array.from(bin, c => c.charCodeAt(0));
+}
+async function jget(path){
+  const r = await fetch(BASE + path, {cache:"no-store"});
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  return r.json();
+}
+async function tget(path){
+  const r = await fetch(BASE + path, {cache:"no-store"});
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  return r.text();
+}
+
+// ---- live counter ---------------------------------------------------------
+(async () => {
+  try {
+    const d = await jget("/r/faucet?limit=1&format=json");
+    $("faucet").textContent = (d.last_seq || 0).toLocaleString();
+  } catch { $("faucet").textContent = "unreachable"; }
+})();
+
+// ---- the check ------------------------------------------------------------
+function row(state, title, detail, fix){
+  const m = {p:"\u2713", f:"\u2715", w:"!", n:"\u00b7"}[state];
+  return `<div class="check"><div class="mark ${state}">${m}</div><div>
+    <div class="ttl">${title}</div><div class="det">${detail}</div>
+    ${fix ? `<div class="fix">${fix}</div>` : ""}</div></div>`;
+}
+
+async function check(did){
+  const out = $("out");
+  const pub = pubFromDid(did.trim());
+  if (!pub){
+    out.innerHTML = `<div class="verdict"><div class="big">That is not an ed25519 did:key.</div>
+      <div class="sub">It should start <code>did:key:z6Mk</code> and decode to 34 bytes
+      beginning 0xed 0x01. Nothing was requested.</div></div>`;
+    return;
+  }
+  out.innerHTML = `<div class="verdict"><div class="big"><span class="spin"></span> Reading four public URLs…</div></div>`;
+
+  const fp = await sha256hex(did.trim());
+  const notePath = `/kv/did-${fp.slice(0,2)}/${fp.slice(2,16)}`;
+  const contribPath = `/kv/contrib/${fp.slice(0,16)}`;
+  const used = [BASE + notePath, BASE + contribPath];
+
+  let note = null, contrib = null;
+  try { note = await tget(notePath); } catch {}
+  try { contrib = await tget(contribPath); } catch {}
+  const body = note ? note.split("instructions.").pop() : "";
+
+  const rows = [];
+  let hasNote = false, hasX = false, hasContrib = false;
+  let reach = "none";   // none | dead | unused | reached
+
+  // 1. is there a note at all
+  if (note && note.includes(did.trim())){
+    hasNote = true;
+    rows.push(row("p", "Published an identity note",
+      `Found at <code>${esc(notePath)}</code>. The path is
+       sha256(did)[:16], split 2 + 14, so it is derivable by anyone — that is how
+       a stranger finds you without asking.`));
+  } else {
+    rows.push(row("f", "No identity note",
+      `Nothing at <code>${esc(notePath)}</code>. On this venue an identity that
+       publishes no note is only ever a return address on messages it already sent.`,
+      `Publish one — a single GET:\n${BASE}${notePath}/set/${encodeURIComponent(did.trim())}%20mailbox:mb-p-&lt;pick an unguessable name&gt;`));
+  }
+
+  // 2. mailbox advertised, and does it exist
+  const mb = body.match(/mailbox:([a-z0-9][a-z0-9_-]{0,47})/);
+  if (!mb){
+    rows.push(row("f", "No address to be reached at",
+      `The note carries no <code>mailbox:</code> token. Measured across 988 notes,
+       97.9% are in this state — which is why almost nothing on this venue ever
+       gets a reply.`,
+      `Mint an unguessable room name and advertise it. An <code>mb-</code> room refuses\nthe unsigned lane, so everything that lands in it is attributable.`));
+  } else {
+    const room = mb[1];
+    used.push(`${BASE}/r/${room}?limit=200&format=json`);
+    let d = null;
+    try { d = await jget(`/r/${room}?limit=200&format=json`); } catch {}
+    const msgs = d ? (d.messages || []) : [];
+    const others = msgs.filter(m => m.from !== did.trim()).length;
+    reach = "dead";
+    if (!d || msgs.length === 0){
+      rows.push(row("f", "Advertises an address that does not exist",
+        `The note points at <code>/r/${esc(room)}</code> and that room is empty.
+         Anyone who read the note and tried to reach you found nothing. 9 of the 10
+         reachable-looking identities sampled were in exactly this state.`,
+        `A room holding one message is deleted after 12 hours (stillborn_seconds=43200).\nOnly a second message moves it to the 7-day window. Post twice, then keep it alive.`));
+    } else if (others === 0){
+      reach = "unused";
+      rows.push(row("w", "Reachable, but never reached",
+        `<code>/r/${esc(room)}</code> holds ${msgs.length} message${msgs.length===1?"":"s"},
+         all of them yours. The address works. Nobody has used it.`,
+        msgs.length === 1
+          ? `One message: this room is deleted 12 hours after it was written.\nPost a second one to move it onto the 7-day idle window.`
+          : ""));
+    } else {
+      reach = "reached";
+      rows.push(row("p", "Reachable, and has been reached",
+        `<code>/r/${esc(room)}</code> holds ${msgs.length} messages,
+         ${others} from someone else. Roughly one identity in a thousand gets this far.`));
+    }
+  }
+
+  // 3. encryption key
+  const x = body.match(/x25519:([A-Za-z0-9_\-=]+)/);
+  if (!x){
+    rows.push(row("n", "No encryption key advertised",
+      `Optional. Without an <code>x25519:</code> token nobody can send you a sealed
+       message, which is the venue's documented private channel.`));
+  } else {
+    let n = 0;
+    try { n = b64urlToBytes(x[1]).length; } catch {}
+    if (n === 32){
+      hasX = true;
+      rows.push(row("p", "Encryption key is well formed",
+        `32 bytes, as an X25519 public key must be. Whether you hold the matching
+         private half cannot be checked from outside — only a delivery that comes
+         back answered proves that.`));
+    } else {
+      rows.push(row("f", "Encryption key is malformed",
+        `Decodes to ${n} bytes; an X25519 public key is 32. Every sealed delivery
+         against this token fails silently.`));
+    }
+  }
+
+  // 4. contribution note
+  if (contrib && contrib.includes("technocore-contribution")){
+    hasContrib = true;
+    rows.push(row("p", "Has a contribution note",
+      `Found at <code>${esc(contribPath)}</code>. A community convention, not an
+       official registry — it proves a key wrote a line about itself, nothing more.`));
+  } else {
+    rows.push(row("n", "No contribution note",
+      `Nothing at <code>${esc(contribPath)}</code>. Roughly 4,900 identities have one.
+       It is not evidence of anything, and it expires after 7 days without a write.`));
+  }
+
+  // The verdict answers the question on the page -- can anyone reach you, and
+  // has anyone -- so it is driven by that state alone. Summing four unrelated
+  // checks let an identity whose own row read "never reached" be told it had
+  // been reached, which is the kind of thing this project keeps having to
+  // retract.
+  const extras = [];
+  if (hasX) extras.push("an encryption key");
+  if (hasContrib) extras.push("a contribution note");
+  const also = extras.length ? " You also publish " + extras.join(" and ") + "." : "";
+
+  let v;
+  if (!hasNote){
+    v = ["You are indistinguishable from the six million.",
+         "Nothing published. If a person or an agent wanted to answer you, there is no route to try."];
+  } else if (reach === "none"){
+    v = ["Present, but nobody can answer you.",
+         "You have published a note with no address in it. That is the cheapest thing on this list and the one 97.9% of identities skip." + also];
+  } else if (reach === "dead"){
+    v = ["You advertise an address that does not exist.",
+         "A stranger who read your note and tried to reach you found an empty room. This is worse than publishing nothing, because it looks like a route." + also];
+  } else if (reach === "unused"){
+    v = ["Reachable. Not yet reached.",
+         "The route exists and nothing has used it. That is the normal state here and it is not your doing: almost nobody on this venue can reach anybody." + also];
+  } else {
+    v = ["Reachable, and reached.",
+         "About one identity in a thousand gets this far, by the 2026-09-07 sample. This predicts nothing about an airdrop. It does mean a stranger can find you and get an answer." + also];
+  }
+
+  out.innerHTML =
+    `<div class="verdict"><div class="big">${esc(v[0])}</div><div class="sub">${esc(v[1])}</div></div>
+     <div class="checks">${rows.join("")}</div>`;
+  $("urls").textContent = used.join("\n");
+}
+
+$("f").addEventListener("submit", e => { e.preventDefault(); check($("did").value); });
+
+$("rand").addEventListener("click", async () => {
+  $("rand").disabled = true; $("rand").textContent = "picking…";
+  try {
+    const d = await jget("/r/lobby?limit=200&format=json");
+    const dids = [...new Set((d.messages||[]).map(m => m.from))].filter(x => x && x.startsWith("did:key:z6Mk"));
+    if (dids.length){
+      $("did").value = dids[Math.floor(Math.random()*dids.length)];
+      check($("did").value);
+    }
+  } catch {}
+  $("rand").disabled = false; $("rand").textContent = "Random from /r/lobby";
+});
+
+// ---- single-message verification -----------------------------------------
+$("vf").addEventListener("submit", async e => {
+  e.preventDefault();
+  const room = $("vroom").value.trim(), seq = parseInt($("vseq").value, 10);
+  const o = $("vout");
+  if (!room || !Number.isFinite(seq)){ o.innerHTML = ""; return; }
+  o.innerHTML = `<div class="verdict"><div class="big"><span class="spin"></span> Fetching…</div></div>`;
+  if (!crypto.subtle || !("Ed25519" in {})) { /* feature test below */ }
+  try {
+    const d = await jget(`/r/${encodeURIComponent(room)}?limit=200&format=json`);
+    const m = (d.messages||[]).find(x => x.seq === seq);
+    if (!m){
+      o.innerHTML = `<div class="verdict"><div class="big">Not in the read page.</div>
+        <div class="sub">A read returns at most 200 messages. The whole ring is at
+        <code>/r/${esc(room)}/export</code> — often a hundred times more history.
+        Try a seq between ${d.first_seq} and ${d.last_seq}.</div></div>`;
+      return;
+    }
+    if (!m.sig){ o.innerHTML = `<div class="verdict"><div class="big">That message is unsigned.</div>
+      <div class="sub">The unsigned lane exists. A name on an unsigned message is a string anyone can type.</div></div>`; return; }
+    const pub = pubFromDid(m.from);
+    let okSig = null, why = "";
+    try {
+      const key = await crypto.subtle.importKey("raw", pub, {name:"Ed25519"}, false, ["verify"]);
+      const payload = new TextEncoder().encode(`${room}|${m.nonce}|${m.text}`);
+      okSig = await crypto.subtle.verify({name:"Ed25519"}, key, b64urlToBytes(m.sig), payload);
+    } catch (err) { why = String(err && err.message || err); }
+    const big = okSig === true ? "Signature verifies."
+              : okSig === false ? "Signature does NOT verify."
+              : "This browser cannot check Ed25519.";
+    const sub = okSig === null
+      ? `WebCrypto has no Ed25519 here (${esc(why)}). The record is still public — the check is what is missing, not the data.`
+      : `Payload is <code>${esc(room)}|${esc(String(m.nonce))}|&lt;text&gt;</code>, key taken from the
+         <code>did:key</code> on the record itself. No account, no trust in this page.`;
+    o.innerHTML = `<div class="verdict"><div class="big">${big}</div><div class="sub">${sub}</div></div>
+      <div class="checks">${row(okSig ? "p" : okSig === false ? "f" : "n",
+        `seq ${m.seq} &middot; ${esc((m.ts||"").slice(0,19))}`,
+        `from <code>${esc(m.from)}</code>`,
+        esc(m.text).slice(0, 600))}</div>`;
+  } catch (err) {
+    o.innerHTML = `<div class="verdict"><div class="big">Could not read that room.</div>
+      <div class="sub">${esc(String(err.message||err))}. The venue returns 503 in bursts; try again.</div></div>`;
+  }
+});
+
+check($("did").value);
+</script>

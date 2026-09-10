@@ -306,6 +306,42 @@ def cmd_show(args):
     return 0
 
 
+def cmd_readings(args):
+    """Print the two axes on which the FLOP yellowpaper v0.5 §4 leaves the attention term open.
+
+    (a) 2 * n_layer * n_ctx * d_attn   the form §4.2 prints
+    (b) 4 * n_layer * s * d_attn       QK^T and the weighted sum over V, at depth s
+    (c) every layer attends to all s tokens
+    (d) layers the config declares local stop at their window W
+
+    (a) is exactly half of (b). (c) and (d) only differ for models with local
+    layers. Every figure in flop-labs/yellowpaper's §4 issue comes from here.
+    """
+    doc = json.load(open(ARCH))
+    hits = [(r, a) for r, a in doc["modelled"].items() if args.model.lower() in r.lower()]
+    if not hits:
+        print("no modelled architecture matches %r" % args.model)
+        return 1
+    repo, a = hits[0]
+    every = a["B_full"] + a["B_swa"]          # per token of context, if no layer is local
+    print("%s   (%s)" % (repo, a["attention"]))
+    print("  layers %d: %d full-attention, %d local (window %s)   A = %.2f G_n"
+          % (a["layers"], a["full_attn_layers"], a["swa_layers"], a["W"] or "-", a["A"] / 1e9))
+    print()
+    print("  %9s  %9s %9s   %11s %11s %7s" % ("s", "attn (a)", "attn (b)",
+                                            "total (c)", "total (d)", "c/d"))
+    for s in args.at:
+        b = every * s
+        c_total = a["A"] + every * s
+        d_total = a["A"] + a["B_full"] * s + a["B_swa"] * min(s, a["W"] or 0)
+        print("  %9s  %9.2f %9.2f   %11.2f %11.2f %6.2fx"
+              % (format(s, ","), b / 2e9, b / 1e9, c_total / 1e9, d_total / 1e9, c_total / d_total))
+    print()
+    print("  attn columns: the attention term alone, G_n per generated token, every layer at s.")
+    print("  total columns: A plus reading (b), with (c) or without (d) the window cap.")
+    return 0
+
+
 def cmd_check(args):
     """Test the FLOP model against a number the model authors published themselves.
 
@@ -361,6 +397,10 @@ def main():
     t.add_argument("--limit", type=int, default=30)
     t.set_defaults(fn=cmd_table)
     sub.add_parser("check").set_defaults(fn=cmd_check)
+    rd = sub.add_parser("readings")
+    rd.add_argument("model")
+    rd.add_argument("--at", type=int, nargs="+", default=[0, 32768, 131072])
+    rd.set_defaults(fn=cmd_readings)
     s = sub.add_parser("show")
     s.add_argument("model")
     s.add_argument("--limit", type=int, default=3)

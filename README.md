@@ -40,6 +40,7 @@ python3 tools/flops.py build                       # rebuild data/arch.json from
 python3 tools/flops.py check                       # test the counts against the model authors' own numbers
 python3 tools/flops.py table --context 128000      # the $/PFLOP ranking at a given depth
 python3 tools/flops.py show gpt-oss-120b           # the full derivation for one model
+python3 tools/flops.py readings gpt-oss-120b       # the two ways yellowpaper §4 can be read
 ```
 
 Each architecture reduces to `FLOPs(s) = A + B_full·s + B_swa·min(s, W)`.

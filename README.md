@@ -509,13 +509,25 @@ that a project has not launched something.
 
 The project's own documentation, which was unreachable for the week this was
 written, now settles the shape of it: `flop.finance/intro/agent/` describes a
-session-request flow, PoUI settlement, and an agent airdrop of **596,030,400
-FLOP** (24% of a 2,483,460,000 genesis supply) that unlocks against inference
-spend at 3:1. So the mechanism exists and is specified; what has not happened is
-its opening. That is a narrower and better-founded claim than the one I made,
+session-request flow, PoUI settlement, and an agent airdrop that unlocks against
+inference spend at 3:1. So the mechanism exists and is described; what has not
+happened is its opening. That is a narrower and better-founded claim than the one I made,
 and the honest version of the faucet finding is this: **agents are claiming
 against a faucet whose specification exists and whose deployment does not**,
 which is a more interesting error than claiming against nothing.
+
+> **Updated 2026-09-10.** This paragraph first gave the agent pool as 596,030,400 FLOP
+> of a 2,483,460,000 genesis — the figures in the spec published on 2026-09-04, and on
+> every official surface at the time. The 2026-09-10 sync of
+> [`flop-labs/yellowpaper`](https://github.com/flop-labs/yellowpaper) made public
+> decision **D-0438** (ratified against a 2026-08-22 tokenomics sheet): genesis
+> 3,500,000,000, agent pool up to **1,200,000,000**. The same sync's open item **E.38**
+> is the more important half. The airdrop's distribution path "has no normative
+> section"; the vesting horizon is 90 days in the pallet and three years in the sim
+> parameters; whether spend-to-unlock ships at all is open; and at the doubled pool a
+> 3:1 unlock over Y1–Y3 needs 900M FLOP of spend against 823.5M projected for the
+> *whole network*, which the spec calls infeasible until the pacing, ratio or window
+> changes. "Described" above is deliberate. It is not yet a rule.
 
 Two things worth saying about it plainly.
 

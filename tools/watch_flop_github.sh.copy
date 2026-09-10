@@ -98,6 +98,9 @@ if [ -n "$NEW_REPOS" ]; then
       break
     done
   done
+  # The one signal this file exists for. It reached watch.log on 2026-09-10
+  # (yellowpaper) and nowhere durable, because watch.log is trimmed to 200 lines.
+  print -r -- "$(now)  ALERT: NEW REPO in $ORG: $(print -r -- $NEW_REPOS | tr '\n' ' ')" >> "$DIR/alerts.log"
   osascript -e "display notification \"New flop-labs repo: $(print -r -- $NEW_REPOS | tr '\n' ' ') - quickstart captured to the log\" with title \"FLOP\" sound name \"Glass\"" 2>/dev/null
 elif [ "$CHANGED" -gt 0 ]; then
   note "$CHANGED repo(s) pushed in $ORG: $(diff "$REPOS" "$STATE/gh-repos.parsed" | grep '^>' | cut -f1 | sed 's/^> //' | tr '\n' ' ')"

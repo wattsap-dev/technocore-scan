@@ -49,6 +49,12 @@ note() { print "$(ts)  $1" >> "$LOG" }
 
 alert() {
     note "ALERT: $1"
+    # watch.log is trimmed to 200 lines further down, so an alert that lives
+    # only there is gone in about eight days. On 2026-09-10 six of them -- the
+    # yellowpaper repository and five changed intro pages -- were written here
+    # and nowhere else, and a banner is gone once dismissed. alerts.log is
+    # append-only and nothing rotates it; check_gh_threads.sh already uses it.
+    print -r -- "$(ts)  ALERT: $1" >> "$DIR/alerts.log"
     /usr/bin/osascript -e "display notification \"$1\" with title \"FLOP testnet watch\" sound name \"Glass\"" 2>/dev/null
 }
 

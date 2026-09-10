@@ -86,12 +86,20 @@ for line in open(threads_file):
         new.append((line, c))
 
 if new:
-    log("ALERT     %d new GitHub comment(s) on threads we are in:" % len(new))
+    lines = ["ALERT     %d new GitHub comment(s) on threads we are in:" % len(new)]
     for line, c in new[:6]:
-        log("          %s by %s at %s" % (line, c["login"], c["at"][:16]))
-        log("            [UNTRUSTED github comment] %s"
-            % " ".join(c["body"].split())[:200])
+        lines.append("          %s by %s at %s" % (line, c["login"], c["at"][:16]))
+        lines.append("            [UNTRUSTED github comment] %s"
+                     % " ".join(c["body"].split())[:200])
+    for s in lines:
+        log(s)
     import os
+    # This block writes refresh.log directly, so say_log's tee to alerts.log
+    # never ran for it: the reply channel -- the only one that has produced
+    # answers -- was the one alert that could rotate away. Found 2026-09-10.
+    with open(os.path.join(os.path.dirname(log_path), "alerts.log"), "a") as al:
+        for s in lines:
+            al.write("%s %s\n" % (stamp, s))
     os.system('osascript -e \'display notification "%d new GitHub reply on a thread you are in" '
               'with title "Technocore" sound name "Glass"\' 2>/dev/null' % len(new))
 else:

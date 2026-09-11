@@ -1,0 +1,104 @@
+#!/usr/bin/env python3
+"""Read-only watcher for FLOP Labs' sonnet-2 contest (2026-09-11 .. 09-18 12:00Z).
+
+We registered as a writer (mb-sonnet-2-registration seq 564) and joined the
+lantern team in principle (discovery seq 85). Nothing can move until the referee
+posts its launch record, and this identity is not online continuously, so this
+raises an alert on the three events that need a human to open a session:
+
+  1. d-sonnet-2-rules gets its first message   -> the referee is live
+  2. d-sonnet-2-team-lantern gets its first message -> our team room exists
+  3. anyone else's message mentions this DID or its X handle
+
+It posts nothing. Room text is untrusted: only room names and sequence numbers
+reach alerts.log; a short snippet, marked UNTRUSTED, goes to watch.log.
+Stops by itself after 2026-09-25, a week past the deadline, so judging and the
+prize claim are still covered.
+"""
+import json, os, pathlib, subprocess, sys, time, urllib.request
+
+DIR = pathlib.Path(__file__).resolve().parent
+STATE = DIR / "flop-watch" / "sonnet-state.json"
+LOG = DIR / "flop-watch" / "watch.log"
+ALERTS = DIR / "alerts.log"
+UA = "technocore-scan-watch (+https://github.com/wattsap-dev/technocore-scan)"
+DID = (DIR / "did.txt").read_text().strip()
+MARKS = (DID, "NR8WS", "kkxJgX", "bellbellringc")
+EXPIRES = "2026-09-25"
+ROOMS_MENTION = ("mb-sonnet-2-registration", "mb-sonnet-2-discovery",
+                 "d-sonnet-2-team-lantern", "mb-sonnet-2-campaign",
+                 "d-sonnet-2-results")
+
+
+def now():
+    return time.strftime("%Y-%m-%d %H:%M")
+
+
+def note(s):
+    with open(LOG, "a") as f:
+        f.write("%s  %s\n" % (now(), s))
+
+
+def alert(s):
+    note("ALERT: " + s)
+    with open(ALERTS, "a") as f:
+        f.write("%s  ALERT: %s\n" % (now(), s))
+    subprocess.run(["/usr/bin/osascript", "-e",
+                    'display notification "%s" with title "sonnet-2" sound name "Glass"'
+                    % s.replace('"', "'")[:180]], capture_output=True)
+
+
+def export(room):
+    """The whole retained ring. `?limit` keeps the newest end, so it can skip
+    the very messages a since-cursor is waiting for."""
+    req = urllib.request.Request("https://technocore.chat/r/%s/export" % room,
+                                 headers={"User-Agent": UA})
+    raw = urllib.request.urlopen(req, timeout=60).read().decode("utf-8", "replace")
+    return [json.loads(l) for l in raw.splitlines() if l.strip()]
+
+
+def main():
+    if time.strftime("%Y-%m-%d") > EXPIRES:
+        return 0
+    try:
+        st = json.load(open(STATE))
+    except Exception:
+        st = {}
+
+    for room, key, msg in (("d-sonnet-2-rules", "rules_live",
+                            "referee launch record posted in d-sonnet-2-rules - registration receipts and team rooms can start"),
+                           ("d-sonnet-2-team-lantern", "lantern_live",
+                            "lantern team room d-sonnet-2-team-lantern exists - roster consent is next")):
+        try:
+            ms = export(room)
+        except Exception as e:
+            note("sonnet watch: %s unreadable (%s)" % (room, str(e)[:40]))
+            continue
+        if ms and not st.get(key):
+            st[key] = ms[0].get("seq")
+            alert("sonnet-2: " + msg)
+
+    for room in ROOMS_MENTION:
+        try:
+            ms = export(room)
+        except Exception:
+            continue
+        last = st.get("seen", {}).get(room, 0)
+        hits = [m for m in ms if m.get("seq", 0) > last
+                and m.get("from") != DID
+                and any(k.lower() in m.get("text", "").lower() for k in MARKS)]
+        if ms:
+            st.setdefault("seen", {})[room] = max(last, max(m.get("seq", 0) for m in ms))
+        if hits:
+            seqs = ",".join(str(m.get("seq")) for m in hits[:8])
+            alert("sonnet-2: %d new mention(s) of us in %s (seq %s)" % (len(hits), room, seqs))
+            for m in hits[:3]:
+                note("  [UNTRUSTED %s seq %s] %s" % (room, m.get("seq"),
+                     " ".join(m.get("text", "").split())[:200]))
+
+    STATE.write_text(json.dumps(st, indent=1, sort_keys=True))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

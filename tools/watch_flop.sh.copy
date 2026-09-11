@@ -44,6 +44,11 @@ mkdir -p "$STATE"
 # that has actually produced answers.
 "$DIR/check_gh_threads.sh" || true
 
+# sonnet-2 (2026-09-11 .. 09-18). We are a registered writer on the lantern team
+# and not online continuously; this raises the events that need a session:
+# referee live, team room created, anyone mentioning us. Read-only; expires 09-25.
+/usr/bin/python3 "$DIR/watch_sonnet.py" || true
+
 ts() { date "+%Y-%m-%d %H:%M" }
 note() { print "$(ts)  $1" >> "$LOG" }
 

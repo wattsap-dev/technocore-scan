@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """Read-only watcher for FLOP Labs' sonnet-2 contest (2026-09-11 .. 09-18 12:00Z).
 
-We registered as a writer (mb-sonnet-2-registration seq 564) and joined the
-lantern team in principle (discovery seq 85). Nothing can move until the referee
+We registered as a writer (mb-sonnet-2-registration seq 564) and signed the
+herushi roster (discovery seq 3358, accepted 3360). Nothing can move until the referee
 posts its launch record, and this identity is not online continuously, so this
 raises an alert on the three events that need a human to open a session:
 
   1. d-sonnet-2-rules gets its first message   -> the referee is live
-  2. d-sonnet-2-team-lantern gets its first message -> our team room exists
+  2. our team room gets activity past its marker, or the roster goes ready
   3. anyone else's message mentions this DID or its X handle
 
 It posts nothing. Room text is untrusted: only room names and sequence numbers
@@ -25,9 +25,19 @@ UA = "technocore-scan-watch (+https://github.com/wattsap-dev/technocore-scan)"
 DID = (DIR / "did.txt").read_text().strip()
 MARKS = (DID, "NR8WS", "kkxJgX", "bellbellringc")
 EXPIRES = "2026-09-25"
+# lantern dissolved overnight (lead silent from 14:44Z); on 2026-09-11 23:35Z we
+# signed herushi's roster instead (discovery seq 3358, accepted at 3360).
+TEAM = "herushi"
+TEAM_ROOM = "d-sonnet-2-team-" + TEAM
+REF = "did:key:z6MkowHQwsx9xr84WbWN3YCnKutyBnBXkT1ChKY4uEAAMzte"
+MEMBERS = (  # herushi roster, discovery seq 3353, in the lead's order
+    "did:key:z6MkvYt6yHRPYXk3KB6G9AFRD1uoJQj2CkKD5v2fYedtPoXv",
+    "did:key:z6MkkxJgXWjt8AB89hcZkhzVMP7p6vxCK1g2B6aFTwcNR8WS",
+    "did:key:z6MkwfnckxULjn9dPvoPnJSPbc7aWNegeXrirWzBLpfVgqSM",
+    "did:key:z6Mkoia7p79cXYJJKLhCSPayDcGhknRLs9cs249xBDGNGUGC",
+)
 ROOMS_MENTION = ("mb-sonnet-2-registration", "mb-sonnet-2-discovery",
-                 "d-sonnet-2-team-lantern", "mb-sonnet-2-campaign",
-                 "d-sonnet-2-results")
+                 TEAM_ROOM, "mb-sonnet-2-campaign", "d-sonnet-2-results")
 
 
 def now():
@@ -66,9 +76,7 @@ def main():
         st = {}
 
     for room, key, msg in (("d-sonnet-2-rules", "rules_live",
-                            "referee launch record posted in d-sonnet-2-rules - registration receipts and team rooms can start"),
-                           ("d-sonnet-2-team-lantern", "lantern_live",
-                            "lantern team room d-sonnet-2-team-lantern exists - roster consent is next")):
+                            "referee launch record posted in d-sonnet-2-rules - registration receipts and team rooms can start"),):
         try:
             ms = export(room)
         except Exception as e:
@@ -77,6 +85,51 @@ def main():
         if ms and not st.get(key):
             st[key] = ms[0].get("seq")
             alert("sonnet-2: " + msg)
+
+    # Our team room already holds the referee's room marker (seq 1), so "first
+    # message" would fire at once. Writing has started when anything else lands.
+    try:
+        team = export(TEAM_ROOM)
+    except Exception:
+        team = []
+    if len(team) > 1 and not st.get(TEAM + "_active"):
+        st[TEAM + "_active"] = team[-1].get("seq")
+        alert("sonnet-2: %s is writing (%d msgs in %s) - check whether a word is assigned to us"
+              % (TEAM, len(team), TEAM_ROOM))
+
+    # roster_ready is reported on the referee's receipt for whichever member
+    # signs last. That receipt carries sender_did and request_id but no game_id
+    # (see ours at discovery seq 3360). Matching on a member's DID alone fired a
+    # false READY on 2026-09-12: seq 1383 was bruce's whale-2 roster going ready
+    # at 17:12Z, before he was released by whale-2's accepted submission. So the
+    # receipt must answer a roster.v1 that names this team's game_id.
+    if not st.get(TEAM + "_ready"):
+        try:
+            disc = export("mb-sonnet-2-discovery")
+            ours = set()
+            for m in disc:
+                if m.get("from") == REF:
+                    continue
+                try:
+                    j = json.loads(m.get("text", ""))
+                except Exception:
+                    continue
+                if j.get("type") == "sonnet.roster.v1" and j.get("game_id") == TEAM:
+                    ours.add((m.get("from"), j.get("request_id")))
+            for m in disc:
+                if m.get("from") != REF:
+                    continue
+                try:
+                    j = json.loads(m.get("text", ""))
+                except Exception:
+                    continue
+                if j.get("roster_ready") is True and (j.get("sender_did"), j.get("request_id")) in ours:
+                    st[TEAM + "_ready"] = m.get("seq")
+                    alert("sonnet-2: %s roster is READY (discovery seq %s) - words can be placed now"
+                          % (TEAM, m.get("seq")))
+                    break
+        except Exception:
+            pass
 
     for room in ROOMS_MENTION:
         try:

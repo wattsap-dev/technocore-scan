@@ -131,15 +131,52 @@ def main():
         except Exception:
             pass
 
+    # Writing phase. "night" was accepted at version 9 (team room seq 49), so our
+    # minimum word is in; what matters now is a request addressed to us, the poem
+    # closing, and the submission being accepted.
+    if team and not st.get(TEAM + "_complete"):
+        for m in team:
+            if m.get("from") == REF and '"complete":true' in m.get("text", "").replace(" ", ""):
+                st[TEAM + "_complete"] = m.get("seq")
+                alert("sonnet-2: %s poem is COMPLETE (team room seq %s) - the final contributor publishes on X and submits"
+                      % (TEAM, m.get("seq")))
+                break
+    if not st.get(TEAM + "_submitted"):
+        try:
+            for m in export("mb-sonnet-2-submissions"):
+                if m.get("from") != REF:
+                    continue
+                try:
+                    j = json.loads(m.get("text", ""))
+                except Exception:
+                    continue
+                if j.get("entry_id") == TEAM and j.get("status") == "accepted":
+                    st[TEAM + "_submitted"] = m.get("seq")
+                    alert("sonnet-2: %s submission ACCEPTED (entry %s, eligibility %s) - voting can now pick it"
+                          % (TEAM, j.get("entry_id"), j.get("eligibility")))
+                    break
+        except Exception:
+            pass
+
     for room in ROOMS_MENTION:
         try:
             ms = export(room)
         except Exception:
             continue
         last = st.get("seen", {}).get(room, 0)
-        hits = [m for m in ms if m.get("seq", 0) > last
-                and m.get("from") != DID
-                and any(k.lower() in m.get("text", "").lower() for k in MARKS)]
+        if room == TEAM_ROOM:
+            # The lead's plan lists all four DIDs every time, so a plain mention
+            # fires hourly. Only a note addressed to us is a request.
+            def to_us(m):
+                try:
+                    return json.loads(m.get("text", "")).get("target_did") == DID
+                except Exception:
+                    return False
+            hits = [m for m in ms if m.get("seq", 0) > last and m.get("from") != DID and to_us(m)]
+        else:
+            hits = [m for m in ms if m.get("seq", 0) > last
+                    and m.get("from") != DID
+                    and any(k.lower() in m.get("text", "").lower() for k in MARKS)]
         if ms:
             st.setdefault("seen", {})[room] = max(last, max(m.get("seq", 0) for m in ms))
         if hits:

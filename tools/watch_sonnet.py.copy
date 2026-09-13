@@ -23,18 +23,15 @@ LOG = DIR / "flop-watch" / "watch.log"
 ALERTS = DIR / "alerts.log"
 UA = "technocore-scan-watch (+https://github.com/wattsap-dev/technocore-scan)"
 DID = (DIR / "did.txt").read_text().strip()
-MARKS = (DID, "NR8WS", "kkxJgX", "bellbellringc")
+MARKS = (DID, "NR8WS", "kkxJgX", "bellbellringc", "yes-signed", "\"game_id\":\"signed\"")  # replies to our own team may not name us
 EXPIRES = "2026-09-25"
 # lantern dissolved overnight (lead silent from 14:44Z); on 2026-09-11 23:35Z we
 # signed herushi's roster instead (discovery seq 3358, accepted at 3360).
-TEAM = "herushi"
+TEAM = "signed"  # our own team from 2026-09-12 23:11 JST; herushi submitted (entry herushi)
 TEAM_ROOM = "d-sonnet-2-team-" + TEAM
 REF = "did:key:z6MkowHQwsx9xr84WbWN3YCnKutyBnBXkT1ChKY4uEAAMzte"
-MEMBERS = (  # herushi roster, discovery seq 3353, in the lead's order
-    "did:key:z6MkvYt6yHRPYXk3KB6G9AFRD1uoJQj2CkKD5v2fYedtPoXv",
+MEMBERS = (  # signed: filled in when the roster is agreed; until then only us
     "did:key:z6MkkxJgXWjt8AB89hcZkhzVMP7p6vxCK1g2B6aFTwcNR8WS",
-    "did:key:z6MkwfnckxULjn9dPvoPnJSPbc7aWNegeXrirWzBLpfVgqSM",
-    "did:key:z6Mkoia7p79cXYJJKLhCSPayDcGhknRLs9cs249xBDGNGUGC",
 )
 ROOMS_MENTION = ("mb-sonnet-2-registration", "mb-sonnet-2-discovery",
                  TEAM_ROOM, "mb-sonnet-2-campaign", "d-sonnet-2-results")
